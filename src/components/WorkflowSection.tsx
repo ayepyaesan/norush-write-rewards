@@ -1,10 +1,11 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { DollarSign, Edit3, Gift } from "lucide-react";
+import { Edit3, Gift } from "lucide-react";
 
 const WorkflowSection = () => {
   const steps = [
     {
-      icon: DollarSign,
+      icon: null,
+      currency: "MMK",
       title: "Declare your task + make deposit",
       description: "Set your writing goal and make a financial commitment to stay motivated.",
       step: "01"
@@ -56,7 +57,11 @@ const WorkflowSection = () => {
                     {/* Icon */}
                     <div className="mb-6 pt-4">
                       <div className="w-16 h-16 mx-auto rounded-full bg-accent flex items-center justify-center mb-4">
-                        <Icon className="w-8 h-8 text-primary" />
+                        {step.currency ? (
+                          <span className="text-2xl font-bold text-primary">K</span>
+                        ) : (
+                          <Icon className="w-8 h-8 text-primary" />
+                        )}
                       </div>
                     </div>
                     
