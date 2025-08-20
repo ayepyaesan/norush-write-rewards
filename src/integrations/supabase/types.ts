@@ -41,6 +41,53 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_progress: {
+        Row: {
+          created_at: string
+          date: string
+          goal_words: number
+          id: string
+          refund_earned_mmk: number | null
+          status: string
+          task_id: string
+          updated_at: string
+          user_id: string
+          words_written: number | null
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          goal_words: number
+          id?: string
+          refund_earned_mmk?: number | null
+          status?: string
+          task_id: string
+          updated_at?: string
+          user_id: string
+          words_written?: number | null
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          goal_words?: number
+          id?: string
+          refund_earned_mmk?: number | null
+          status?: string
+          task_id?: string
+          updated_at?: string
+          user_id?: string
+          words_written?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_progress_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
@@ -121,6 +168,50 @@ export type Database = {
         }
         Relationships: []
       }
+      refunds: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          id: string
+          refund_amount_mmk: number
+          refund_date: string
+          status: string
+          task_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          refund_amount_mmk: number
+          refund_date?: string
+          status?: string
+          task_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          refund_amount_mmk?: number
+          refund_date?: string
+          status?: string
+          task_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refunds_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       signup_requests: {
         Row: {
           created_at: string
@@ -159,10 +250,13 @@ export type Database = {
       }
       tasks: {
         Row: {
+          base_rate_per_word: number | null
           created_at: string
+          deadline: string | null
           deposit_amount: number
           duration_days: number
           id: string
+          refund_earned_mmk: number | null
           status: string
           task_name: string
           updated_at: string
@@ -170,10 +264,13 @@ export type Database = {
           word_count: number
         }
         Insert: {
+          base_rate_per_word?: number | null
           created_at?: string
+          deadline?: string | null
           deposit_amount: number
           duration_days: number
           id?: string
+          refund_earned_mmk?: number | null
           status?: string
           task_name: string
           updated_at?: string
@@ -181,10 +278,13 @@ export type Database = {
           word_count: number
         }
         Update: {
+          base_rate_per_word?: number | null
           created_at?: string
+          deadline?: string | null
           deposit_amount?: number
           duration_days?: number
           id?: string
+          refund_earned_mmk?: number | null
           status?: string
           task_name?: string
           updated_at?: string
@@ -198,7 +298,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_daily_progress_entries: {
+        Args: {
+          p_duration_days: number
+          p_start_date?: string
+          p_task_id: string
+          p_user_id: string
+          p_word_count: number
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
