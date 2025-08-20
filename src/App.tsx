@@ -7,6 +7,9 @@ import Index from "./pages/Index";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Workspace from "./pages/Workspace";
+import TaskCreation from "./pages/TaskCreation";
+import Payment from "./pages/Payment";
+import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +25,9 @@ const App = () => (
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/workspace" element={<Workspace />} />
+          <Route path="/task-creation" element={<TaskCreation />} />
+          <Route path="/payment/:taskId" element={<Payment />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

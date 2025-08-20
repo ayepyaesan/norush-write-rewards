@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, User, Shield } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 
@@ -21,6 +21,7 @@ const Workspace = () => {
   const [kpayPhone, setKpayPhone] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,11 +89,46 @@ const Workspace = () => {
         setIsLoading(false);
       }
     } else {
-      // Handle sign in (placeholder for now)
-      toast({
-        title: "Welcome back!",
-        description: "Sign in functionality will be implemented soon.",
-      });
+      // Handle sign in - check against signup_requests for demo purposes
+      setIsLoading(true);
+      
+      try {
+        const { data: user, error } = await supabase
+          .from('signup_requests')
+          .select('*')
+          .eq('email', email.trim().toLowerCase())
+          .eq('password', password)
+          .single();
+
+        if (error || !user) {
+          toast({
+            title: "Sign In Failed",
+            description: "Invalid email or password. Please try again.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Welcome back!",
+            description: `Signed in as ${user.full_name}`,
+          });
+          
+          // For demo purposes, we'll redirect to task creation
+          // In a real app, you'd use proper Supabase auth
+          if (user.role === "user") {
+            navigate("/task-creation");
+          } else {
+            navigate("/dashboard");
+          }
+        }
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "An unexpected error occurred. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -157,6 +193,8 @@ const Workspace = () => {
                       id="email"
                       type="email"
                       placeholder="your@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       required
                       className="transition-all duration-300 focus:ring-2 focus:ring-primary/50"
                     />
@@ -167,12 +205,18 @@ const Workspace = () => {
                       id="password"
                       type="password"
                       placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
                       required
                       className="transition-all duration-300 focus:ring-2 focus:ring-primary/50"
                     />
                   </div>
-                  <Button type="submit" className="w-full gradient-warm hover-lift">
-                    Sign In
+                  <Button 
+                    type="submit" 
+                    className="w-full gradient-warm hover-lift"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Signing In..." : "Sign In"}
                   </Button>
                 </form>
               </TabsContent>
