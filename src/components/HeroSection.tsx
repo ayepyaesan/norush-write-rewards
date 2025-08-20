@@ -76,7 +76,7 @@ const HeroSection = () => {
       {/* Content */}
       <div className="relative z-20 text-center px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
         <div className="animate-fade-in">
-          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-foreground mb-6 leading-tight">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground mb-6 leading-tight">
             Join Our Community.
             <br />
             <span className="text-primary">Achieve Together.</span>
