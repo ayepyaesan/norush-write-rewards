@@ -13,6 +13,8 @@ import { Link } from "react-router-dom";
 const Workspace = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [role, setRole] = useState("user");
+  const [fullName, setFullName] = useState("");
+  const [kbzPhone, setKbzPhone] = useState("");
   const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -109,11 +111,35 @@ const Workspace = () => {
               <TabsContent value="signup">
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
+                    <Label htmlFor="fullname">Full Name</Label>
+                    <Input
+                      id="fullname"
+                      type="text"
+                      placeholder="Your full name"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      required
+                      className="transition-all duration-300 focus:ring-2 focus:ring-primary/50"
+                    />
+                  </div>
+                  <div className="space-y-2">
                     <Label htmlFor="signup-email">Email</Label>
                     <Input
                       id="signup-email"
                       type="email"
                       placeholder="your@email.com"
+                      required
+                      className="transition-all duration-300 focus:ring-2 focus:ring-primary/50"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="kbz-phone">KBZ Phone Number</Label>
+                    <Input
+                      id="kbz-phone"
+                      type="tel"
+                      placeholder="09xxxxxxxxx"
+                      value={kbzPhone}
+                      onChange={(e) => setKbzPhone(e.target.value)}
                       required
                       className="transition-all duration-300 focus:ring-2 focus:ring-primary/50"
                     />
