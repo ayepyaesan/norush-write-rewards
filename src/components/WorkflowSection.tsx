@@ -58,7 +58,7 @@ const WorkflowSection = () => {
                     <div className="mb-6 pt-4">
                       <div className="w-16 h-16 mx-auto rounded-full bg-accent flex items-center justify-center mb-4">
                         {step.currency ? (
-                          <span className="text-2xl font-bold text-primary">K</span>
+                          <span className="text-2xl font-bold text-primary">MMK</span>
                         ) : (
                           <Icon className="w-8 h-8 text-primary" />
                         )}
