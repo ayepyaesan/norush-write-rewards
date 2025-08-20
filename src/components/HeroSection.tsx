@@ -77,11 +77,9 @@ const HeroSection = () => {
       <div className="relative z-20 text-center px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
         <div className="animate-fade-in">
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-6 leading-tight">
-            Join Our Community.
+            <span className="text-primary">Stay Consistent.</span> Meet Your Deadlines.
             <br />
-            <span className="text-primary">Achieve Together.</span>
-            <br />
-            Write Smarter with Friends.
+            Write Smarter with <span className="text-primary">No Rush.</span>
           </h1>
           
           <p className="text-base sm:text-lg text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
