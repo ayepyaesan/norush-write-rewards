@@ -91,8 +91,8 @@ const HeroSection = () => {
           <div className="animate-slide-up" style={{ animationDelay: "0.3s" }}>
             <Link to="/workspace">
               <Button 
-                size="lg" 
-                className="hover-lift text-lg px-8 py-6 rounded-full shadow-warm bg-primary text-primary-foreground hover:bg-primary/90 glow-effect"
+                size="default" 
+                className="hover-lift text-base px-6 py-4 rounded-full shadow-warm bg-primary text-primary-foreground hover:bg-primary/90 glow-effect"
               >
                 Start Your Journey
                 <ArrowRight className="ml-2 w-5 h-5" />
