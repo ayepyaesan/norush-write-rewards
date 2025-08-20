@@ -165,12 +165,55 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (profile?.role === 'admin') {
       loadAllData();
-      // Set up real-time updates
+      
+      // Set up real-time subscriptions for instant updates
+      const profilesChannel = supabase
+        .channel('profiles-changes')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'profiles' }, 
+          () => {
+            console.log('Profile change detected, refreshing stats...');
+            loadStats();
+            loadUsers();
+          }
+        )
+        .subscribe();
+
+      const tasksChannel = supabase
+        .channel('tasks-changes')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'tasks' }, 
+          () => {
+            console.log('Task change detected, refreshing stats...');
+            loadStats();
+            loadTasks();
+          }
+        )
+        .subscribe();
+
+      const paymentsChannel = supabase
+        .channel('payments-changes')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'payments' }, 
+          () => {
+            console.log('Payment change detected, refreshing stats...');
+            loadStats();
+            loadDeposits();
+          }
+        )
+        .subscribe();
+
+      // Also keep polling as backup (every 60 seconds instead of 30)
       const interval = setInterval(() => {
         loadAllData();
-      }, 30000); // Refresh every 30 seconds
+      }, 60000);
 
-      return () => clearInterval(interval);
+      return () => {
+        clearInterval(interval);
+        supabase.removeChannel(profilesChannel);
+        supabase.removeChannel(tasksChannel);
+        supabase.removeChannel(paymentsChannel);
+      };
     }
   }, [profile]);
 
@@ -220,24 +263,11 @@ const AdminDashboard = () => {
 
   const loadStats = async () => {
     try {
+      console.log('Loading real-time stats from Supabase...');
       const today = new Date().toISOString().split('T')[0];
       
-      // Get comprehensive statistics
-      const [
-        { count: totalUsersCount },
-        { count: activeUsersCount },
-        { count: totalTasksCount },
-        { count: activeTasksCount },
-        { count: completedTasksCount },
-        { count: overdueTasksCount },
-        { count: totalPaymentsCount },
-        { count: pendingPaymentsCount },
-        { count: verifiedPaymentsCount },
-        { count: rejectedPaymentsCount },
-        { count: tasksTodayCount },
-        { count: newUsersTodayCount },
-        { data: revenueData }
-      ] = await Promise.all([
+      // Get comprehensive statistics with proper error handling
+      const queries = await Promise.allSettled([
         supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'user'),
         supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'user').eq('has_access', true),
         supabase.from('tasks').select('*', { count: 'exact', head: true }),
@@ -249,14 +279,29 @@ const AdminDashboard = () => {
         supabase.from('payments').select('*', { count: 'exact', head: true }).eq('payment_status', 'verified'),
         supabase.from('payments').select('*', { count: 'exact', head: true }).eq('payment_status', 'rejected'),
         supabase.from('tasks').select('*', { count: 'exact', head: true }).gte('created_at', today),
-        supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', today),
+        supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', today).eq('role', 'user'),
         supabase.from('payments').select('amount').eq('payment_status', 'verified')
       ]);
+
+      // Extract counts safely
+      const totalUsersCount = queries[0].status === 'fulfilled' ? queries[0].value.count : 0;
+      const activeUsersCount = queries[1].status === 'fulfilled' ? queries[1].value.count : 0;
+      const totalTasksCount = queries[2].status === 'fulfilled' ? queries[2].value.count : 0;
+      const activeTasksCount = queries[3].status === 'fulfilled' ? queries[3].value.count : 0;
+      const completedTasksCount = queries[4].status === 'fulfilled' ? queries[4].value.count : 0;
+      const overdueTasksCount = queries[5].status === 'fulfilled' ? queries[5].value.count : 0;
+      const totalPaymentsCount = queries[6].status === 'fulfilled' ? queries[6].value.count : 0;
+      const pendingPaymentsCount = queries[7].status === 'fulfilled' ? queries[7].value.count : 0;
+      const verifiedPaymentsCount = queries[8].status === 'fulfilled' ? queries[8].value.count : 0;
+      const rejectedPaymentsCount = queries[9].status === 'fulfilled' ? queries[9].value.count : 0;
+      const tasksTodayCount = queries[10].status === 'fulfilled' ? queries[10].value.count : 0;
+      const newUsersTodayCount = queries[11].status === 'fulfilled' ? queries[11].value.count : 0;
+      const revenueData = queries[12].status === 'fulfilled' ? queries[12].value.data : [];
 
       const totalRevenue = revenueData?.reduce((sum, payment) => sum + payment.amount, 0) || 0;
       const avgCompletion = totalTasksCount ? Math.round((completedTasksCount / totalTasksCount) * 100) : 0;
 
-      setStats({
+      const newStats = {
         totalUsers: totalUsersCount || 0,
         activeUsers: activeUsersCount || 0,
         totalTasks: totalTasksCount || 0,
@@ -274,9 +319,17 @@ const AdminDashboard = () => {
         totalProfit: Math.round(totalRevenue * 0.85), // Assuming 15% overhead
         avgTaskCompletion: avgCompletion,
         topPerformers: Math.min(5, activeUsersCount || 0)
-      });
+      };
+
+      console.log('Real-time stats loaded:', newStats);
+      setStats(newStats);
     } catch (error) {
-      console.error('Error loading stats:', error);
+      console.error('Error loading real-time stats:', error);
+      toast({
+        title: "Stats Error",
+        description: "Failed to load real-time statistics",
+        variant: "destructive",
+      });
     }
   };
 
@@ -713,31 +766,74 @@ const AdminDashboard = () => {
                 </SelectContent>
               </Select>
             )}
-            <Button variant="outline" size="icon" onClick={loadAllData} disabled={refreshing}>
-              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-            </Button>
-            <Button variant="outline" size="icon">
-              <Bell className="w-4 h-4" />
-            </Button>
+            <div className="flex items-center gap-4">
+              {/* Real-time status indicator */}
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${refreshing ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'}`}></div>
+                <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  {refreshing ? 'Updating...' : 'Live'}
+                </span>
+              </div>
+              
+              <Button variant="outline" size="icon" onClick={loadAllData} disabled={refreshing}>
+                <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+              </Button>
+              <Button variant="outline" size="icon">
+                <Bell className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </div>
 
         {/* Dashboard Tab */}
         {activeTab === "dashboard" && (
           <div className="space-y-6">
-            {/* Enhanced Stats Grid */}
+            {/* Enhanced Stats Grid with Real-time Indicators */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {[
-                { title: "Total Users", value: stats.totalUsers, change: `+${stats.newUsersToday} today`, icon: Users, color: "sky" },
-                { title: "Active Tasks", value: stats.activeTasks, change: `${stats.avgTaskCompletion}% completion`, icon: Target, color: "mint" },
-                { title: "Total Revenue", value: `$${stats.totalRevenue.toLocaleString()}`, change: `$${stats.totalProfit.toLocaleString()} profit`, icon: DollarSign, color: "green" },
-                { title: "Pending Payments", value: stats.pendingPayments, change: "Needs review", icon: AlertTriangle, color: "yellow" }
+                { 
+                  title: "Total Users", 
+                  value: stats.totalUsers, 
+                  change: `+${stats.newUsersToday} today`, 
+                  icon: Users, 
+                  color: "sky",
+                  realTime: true
+                },
+                { 
+                  title: "Active Tasks", 
+                  value: stats.activeTasks, 
+                  change: `${stats.avgTaskCompletion}% completion`, 
+                  icon: Target, 
+                  color: "mint",
+                  realTime: true
+                },
+                { 
+                  title: "Total Revenue", 
+                  value: `$${stats.totalRevenue.toLocaleString()}`, 
+                  change: `$${stats.totalProfit.toLocaleString()} profit`, 
+                  icon: DollarSign, 
+                  color: "green",
+                  realTime: true
+                },
+                { 
+                  title: "Pending Payments", 
+                  value: stats.pendingPayments, 
+                  change: "Needs review", 
+                  icon: AlertTriangle, 
+                  color: "yellow",
+                  realTime: true
+                }
               ].map((stat, index) => (
-                <Card key={index} className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'} shadow-lg hover:shadow-xl transition-shadow`}>
+                <Card key={index} className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'} shadow-lg hover:shadow-xl transition-shadow relative`}>
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{stat.title}</p>
+                        <div className="flex items-center gap-2">
+                          <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{stat.title}</p>
+                          {stat.realTime && (
+                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                          )}
+                        </div>
                         <p className="text-2xl font-bold">{stat.value}</p>
                         <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'} mt-1`}>{stat.change}</p>
                       </div>
