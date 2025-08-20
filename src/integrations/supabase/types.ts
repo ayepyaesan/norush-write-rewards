@@ -41,6 +41,53 @@ export type Database = {
         }
         Relationships: []
       }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          merchant_phone: string
+          payment_code: string | null
+          payment_status: string
+          screenshot_url: string | null
+          task_id: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          merchant_phone?: string
+          payment_code?: string | null
+          payment_status?: string
+          screenshot_url?: string | null
+          task_id: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          merchant_phone?: string
+          payment_code?: string | null
+          payment_status?: string
+          screenshot_url?: string | null
+          task_id?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       signup_requests: {
         Row: {
           created_at: string
@@ -74,6 +121,42 @@ export type Database = {
           password?: string
           role?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          created_at: string
+          deposit_amount: number
+          duration_days: number
+          id: string
+          status: string
+          task_name: string
+          updated_at: string
+          user_id: string | null
+          word_count: number
+        }
+        Insert: {
+          created_at?: string
+          deposit_amount: number
+          duration_days: number
+          id?: string
+          status?: string
+          task_name: string
+          updated_at?: string
+          user_id?: string | null
+          word_count: number
+        }
+        Update: {
+          created_at?: string
+          deposit_amount?: number
+          duration_days?: number
+          id?: string
+          status?: string
+          task_name?: string
+          updated_at?: string
+          user_id?: string | null
+          word_count?: number
         }
         Relationships: []
       }
