@@ -67,8 +67,29 @@ export const useAuth = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  const signIn = async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      return { error };
+    }
+
+    return { data };
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
+  };
+
+  const redirectBasedOnRole = (userProfile: UserProfile) => {
+    if (userProfile.role === 'admin') {
+      window.location.href = '/admin/dashboard';
+    } else {
+      window.location.href = '/user/dashboard';
+    }
   };
 
   return {
@@ -76,6 +97,8 @@ export const useAuth = () => {
     session,
     profile,
     loading,
-    signOut
+    signIn,
+    signOut,
+    redirectBasedOnRole
   };
 };

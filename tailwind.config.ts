@@ -69,6 +69,37 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				sky: {
+					DEFAULT: 'hsl(var(--sky))',
+					foreground: 'hsl(var(--sky-foreground))',
+					50: 'hsl(200 100% 98%)',
+					100: 'hsl(200 100% 95%)',
+					500: 'hsl(200 100% 60%)',
+					600: 'hsl(200 100% 50%)',
+					700: 'hsl(200 100% 40%)'
+				},
+				mint: {
+					DEFAULT: 'hsl(var(--mint))',
+					foreground: 'hsl(var(--mint-foreground))',
+					50: 'hsl(150 60% 98%)',
+					100: 'hsl(150 60% 95%)',
+					500: 'hsl(150 60% 60%)',
+					600: 'hsl(150 60% 50%)',
+					700: 'hsl(150 60% 40%)'
+				},
+				lavender: {
+					DEFAULT: 'hsl(var(--lavender))',
+					foreground: 'hsl(var(--lavender-foreground))',
+					50: 'hsl(270 60% 98%)',
+					100: 'hsl(270 60% 95%)',
+					500: 'hsl(270 60% 60%)',
+					600: 'hsl(270 60% 50%)',
+					700: 'hsl(270 60% 40%)'
+				},
+				ivory: {
+					DEFAULT: 'hsl(var(--ivory))',
+					foreground: 'hsl(var(--ivory-foreground))'
 				}
 			},
 			borderRadius: {

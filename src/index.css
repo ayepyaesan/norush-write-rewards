@@ -36,6 +36,16 @@ All colors MUST be HSL.
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
 
+    /* Study-inspired colors */
+    --sky: 200 100% 85%;
+    --sky-foreground: 200 20% 20%;
+    --mint: 150 60% 80%;
+    --mint-foreground: 150 20% 20%;
+    --lavender: 270 60% 85%;
+    --lavender-foreground: 270 20% 20%;
+    --ivory: 45 60% 96%;
+    --ivory-foreground: 45 20% 20%;
+
     --border: 250 30% 90%;
     --input: 250 50% 97%;
     --ring: 240 100% 75%;
