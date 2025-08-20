@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RefundTracker } from "@/components/RefundTracker";
+import DailyMilestoneCounter from "@/components/DailyMilestoneCounter";
 import AccessGate from "@/components/AccessGate";
 import { ArrowLeft, Save, FileText, Target, Calendar, DollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -294,33 +295,79 @@ const TaskWorkspace = () => {
               </Card>
             )}
 
-            {/* Writing Area */}
-            <Card className="gradient-card">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Your Writing Space</span>
-                  <Button
-                    onClick={handleSaveProgress}
-                    disabled={isSaving || !todayProgress}
-                    className="gradient-warm hover-lift"
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    {isSaving ? "Saving..." : "Save Progress"}
-                  </Button>
-                </CardTitle>
-                <CardDescription>
-                  Write your content here. Your progress will be automatically tracked.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Textarea
-                  placeholder="Start writing your content here..."
-                  value={writingText}
-                  onChange={(e) => setWritingText(e.target.value)}
-                  className="min-h-[400px] resize-none border-0 bg-background/30 focus:bg-background/50 transition-all duration-300"
-                />
-              </CardContent>
-            </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              {/* Main Writing Area */}
+              <div className="lg:col-span-3">
+                <Card className="gradient-card">
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <span>Your Writing Space</span>
+                      <Button
+                        onClick={handleSaveProgress}
+                        disabled={isSaving || !todayProgress}
+                        className="gradient-warm hover-lift"
+                      >
+                        <Save className="w-4 h-4 mr-2" />
+                        {isSaving ? "Saving..." : "Save Progress"}
+                      </Button>
+                    </CardTitle>
+                    <CardDescription>
+                      Write your content here. Your progress will be automatically tracked.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Textarea
+                      placeholder="Start writing your content here..."
+                      value={writingText}
+                      onChange={(e) => setWritingText(e.target.value)}
+                      className="min-h-[500px] resize-none border-0 bg-background/30 focus:bg-background/50 transition-all duration-300"
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Daily Milestone Counter - Fixed in top-right corner */}
+              <div className="lg:col-span-1">
+                <div className="sticky top-4">
+                  <DailyMilestoneCounter
+                    taskWordCount={task.word_count}
+                    taskDurationDays={task.duration_days}
+                    taskCreatedAt={task.created_at}
+                    currentWordCount={wordCount}
+                    className="mb-4"
+                  />
+                  
+                  {/* Additional Progress Info */}
+                  <Card className="gradient-card">
+                    <CardContent className="p-4">
+                      <div className="space-y-3">
+                        <div className="text-center">
+                          <div className="text-sm font-medium text-muted-foreground">Today's Goal</div>
+                          <div className="text-lg font-bold">
+                            {todayProgress ? todayProgress.goal_words.toLocaleString() : "N/A"} words
+                          </div>
+                        </div>
+                        
+                        <div className="text-center">
+                          <div className="text-sm font-medium text-muted-foreground">Current Progress</div>
+                          <div className="text-2xl font-bold text-primary">
+                            {progressPercentage.toFixed(1)}%
+                          </div>
+                        </div>
+                        
+                        {progressPercentage >= 100 && (
+                          <div className="text-center bg-green-100 dark:bg-green-900 rounded-lg p-2">
+                            <div className="text-green-700 dark:text-green-300 text-sm font-medium">
+                              🎉 Daily Goal Achieved!
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="progress">
