@@ -14,7 +14,8 @@ const Workspace = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [role, setRole] = useState("user");
   const [fullName, setFullName] = useState("");
-  const [kbzPhone, setKbzPhone] = useState("");
+  const [kpayName, setKpayName] = useState("");
+  const [kpayPhone, setKpayPhone] = useState("");
   const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -111,6 +112,28 @@ const Workspace = () => {
               <TabsContent value="signup">
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
+                    <Label htmlFor="role">Role</Label>
+                    <Select value={role} onValueChange={setRole}>
+                      <SelectTrigger className="transition-all duration-300 focus:ring-2 focus:ring-primary/50">
+                        <SelectValue placeholder="Select your role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="user">
+                          <div className="flex items-center">
+                            <User className="w-4 h-4 mr-2" />
+                            User
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="admin">
+                          <div className="flex items-center">
+                            <Shield className="w-4 h-4 mr-2" />
+                            Admin
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
                     <Label htmlFor="fullname">Full Name</Label>
                     <Input
                       id="fullname"
@@ -133,18 +156,6 @@ const Workspace = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="kbz-phone">KBZ Phone Number</Label>
-                    <Input
-                      id="kbz-phone"
-                      type="tel"
-                      placeholder="09xxxxxxxxx"
-                      value={kbzPhone}
-                      onChange={(e) => setKbzPhone(e.target.value)}
-                      required
-                      className="transition-all duration-300 focus:ring-2 focus:ring-primary/50"
-                    />
-                  </div>
-                  <div className="space-y-2">
                     <Label htmlFor="signup-password">Password</Label>
                     <Input
                       id="signup-password"
@@ -154,28 +165,39 @@ const Workspace = () => {
                       className="transition-all duration-300 focus:ring-2 focus:ring-primary/50"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="role">Role</Label>
-                    <Select value={role} onValueChange={setRole}>
-                      <SelectTrigger className="transition-all duration-300 focus:ring-2 focus:ring-primary/50">
-                        <SelectValue placeholder="Select your role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="user">
-                          <div className="flex items-center">
-                            <User className="w-4 h-4 mr-2" />
-                            User
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="admin">
-                          <div className="flex items-center">
-                            <Shield className="w-4 h-4 mr-2" />
-                            Admin
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  
+                  {role === "user" && (
+                    <>
+                      <div className="pt-4">
+                        <h3 className="text-lg font-semibold text-foreground mb-4">Payment Information</h3>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="kpay-name">Kpay Name</Label>
+                        <Input
+                          id="kpay-name"
+                          type="text"
+                          placeholder="Your Kpay name"
+                          value={kpayName}
+                          onChange={(e) => setKpayName(e.target.value)}
+                          required
+                          className="transition-all duration-300 focus:ring-2 focus:ring-primary/50"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="kpay-phone">Kpay Phone Number</Label>
+                        <Input
+                          id="kpay-phone"
+                          type="tel"
+                          placeholder="09xxxxxxxxx"
+                          value={kpayPhone}
+                          onChange={(e) => setKpayPhone(e.target.value)}
+                          required
+                          className="transition-all duration-300 focus:ring-2 focus:ring-primary/50"
+                        />
+                      </div>
+                    </>
+                  )}
+                  
                   <Button type="submit" className="w-full gradient-warm hover-lift">
                     Create Account
                   </Button>
