@@ -109,9 +109,9 @@ const TaskCreation = () => {
 
         toast({
           title: "Task Created!",
-          description: "Redirecting to task workspace...",
+          description: "Redirecting to payment...",
         });
-        navigate(`/task/${task.id}`);
+        navigate(`/payment/${task.id}`);
       }
     } catch (error) {
       toast({
