@@ -5,9 +5,9 @@ import { ArrowRight, BookOpen, Edit3, Award, FileText, Sparkles } from "lucide-r
 const HeroSection = () => {
   return (
     <section
-      className="relative h-screen flex items-center justify-center overflow-hidden"
+      className="relative h-screen flex items-start justify-center overflow-hidden pt-20"
       style={{
-        backgroundImage: "url('/lovable-uploads/8c7de7ef-e498-43dc-b0c6-dd82690536bc.png')",
+        backgroundImage: "url('/lovable-uploads/01058b05-2f3e-4ee9-bf33-c2980736e806.png')",
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
