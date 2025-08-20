@@ -40,6 +40,7 @@ const CombinedDashboard = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [writingText, setWritingText] = useState("");
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [showKpayModal, setShowKpayModal] = useState(false);
   const [kpayName, setKpayName] = useState("");
   const [kpayPhone, setKpayPhone] = useState("");
@@ -272,7 +273,7 @@ const CombinedDashboard = () => {
           </Button>
         </div>
 
-        <Tabs defaultValue="dashboard" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="write">Write</TabsTrigger>
@@ -486,10 +487,7 @@ const CombinedDashboard = () => {
                             size="sm"
                             onClick={() => {
                               setSelectedTask(task);
-                              // Switch to write tab
-                              const tabsList = document.querySelector('[role="tablist"]');
-                              const writeTab = tabsList?.querySelector('[value="write"]') as HTMLElement;
-                              writeTab?.click();
+                              setActiveTab("write");
                             }}
                           >
                             Start Writing
