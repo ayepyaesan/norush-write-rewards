@@ -9,10 +9,8 @@ import Contact from "./pages/Contact";
 import Workspace from "./pages/Workspace";
 import TaskCreation from "./pages/TaskCreation";
 import Payment from "./pages/Payment";
-import Dashboard from "./pages/Dashboard";
 import TaskWorkspace from "./pages/TaskWorkspace";
 import RefundSummary from "./pages/RefundSummary";
-import UserDashboard from "./pages/UserDashboard";
 import CombinedDashboard from "./pages/CombinedDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
@@ -33,10 +31,9 @@ const App = () => (
           <Route path="/task-creation" element={<TaskCreation />} />
           <Route path="/payment/:taskId" element={<Payment />} />
           <Route path="/dashboard" element={<CombinedDashboard />} />
-          <Route path="/old-dashboard" element={<Dashboard />} />
+          <Route path="/user/dashboard" element={<CombinedDashboard />} />
           <Route path="/task/:taskId" element={<TaskWorkspace />} />
           <Route path="/refund/:taskId" element={<RefundSummary />} />
-          <Route path="/user/dashboard" element={<UserDashboard />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
