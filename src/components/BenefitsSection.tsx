@@ -24,13 +24,13 @@ const BenefitsSection = () => {
   ];
 
   return (
-    <section className="py-20 bg-background">
+    <section className="py-20 bg-accent">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16 animate-fade-in">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-6">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-accent-foreground mb-6">
             Why Choose NoRush?
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xl text-accent-foreground/80 max-w-2xl mx-auto">
             Transform your writing process with proven benefits that last
           </p>
         </div>
@@ -44,11 +44,11 @@ const BenefitsSection = () => {
                 className="animate-slide-up"
                 style={{ animationDelay: `${index * 0.15}s` }}
               >
-                <Card className="h-full bg-card border-border/50 shadow-card hover-lift group">
+                <Card className="h-full bg-card border border-border shadow-card hover-lift group">
                   <CardContent className="p-8 text-center">
-                    {/* Icon with gradient background */}
+                    {/* Icon with background */}
                     <div className="mb-6">
-                      <div className={`w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br ${benefit.gradient} flex items-center justify-center mb-4 shadow-warm group-hover:scale-110 transition-transform duration-300`}>
+                      <div className="w-20 h-20 mx-auto rounded-2xl bg-primary flex items-center justify-center mb-4 shadow-warm group-hover:scale-110 transition-transform duration-300">
                         <Icon className="w-10 h-10 text-primary-foreground" />
                       </div>
                     </div>

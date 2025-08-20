@@ -14,31 +14,31 @@ const HeroSection = () => {
       }}
     >
       {/* Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/80 via-accent/70 to-primary-glow/60 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-gradient-to-br from-background/95 via-background/90 to-background/95" />
       
       {/* Floating elements */}
       <div className="absolute top-1/4 left-10 animate-float">
-        <Sparkles className="text-primary-foreground/30 w-8 h-8" />
+        <Sparkles className="text-primary/30 w-8 h-8" />
       </div>
       <div className="absolute top-1/3 right-20 animate-float" style={{ animationDelay: "1s" }}>
-        <Sparkles className="text-primary-foreground/20 w-12 h-12" />
+        <Sparkles className="text-primary/20 w-12 h-12" />
       </div>
       <div className="absolute bottom-1/4 left-1/4 animate-float" style={{ animationDelay: "2s" }}>
-        <Sparkles className="text-primary-foreground/25 w-6 h-6" />
+        <Sparkles className="text-primary/25 w-6 h-6" />
       </div>
 
       {/* Content */}
       <div className="relative z-10 text-center px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
         <div className="animate-fade-in">
-          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-primary-foreground mb-6 leading-tight">
+          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-foreground mb-6 leading-tight">
             Stay Consistent.
             <br />
-            <span className="text-primary-glow">Meet Your Deadlines.</span>
+            <span className="text-primary">Meet Your Deadlines.</span>
             <br />
             Write Smarter with NoRush.
           </h1>
           
-          <p className="text-xl sm:text-2xl text-primary-foreground/90 mb-8 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-xl sm:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
             Avoid last-minute panic, and build quality work habits.
           </p>
           
@@ -46,7 +46,7 @@ const HeroSection = () => {
             <Link to="/workspace">
               <Button 
                 size="lg" 
-                className="gradient-warm hover-lift text-lg px-8 py-6 rounded-full shadow-warm"
+                className="hover-lift text-lg px-8 py-6 rounded-full shadow-warm bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 Start Your Journey
                 <ArrowRight className="ml-2 w-5 h-5" />

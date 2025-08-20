@@ -24,7 +24,7 @@ const WorkflowSection = () => {
   ];
 
   return (
-    <section className="py-20 bg-muted/30">
+    <section className="py-20 bg-background">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16 animate-fade-in">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-6">
@@ -44,18 +44,18 @@ const WorkflowSection = () => {
                 className="animate-slide-up"
                 style={{ animationDelay: `${index * 0.2}s` }}
               >
-                <Card className="relative h-full gradient-card border-0 shadow-card hover-lift">
+                <Card className="relative h-full bg-card border border-border shadow-card hover-lift">
                   <CardContent className="p-8 text-center">
                     {/* Step number */}
                     <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                      <div className="w-8 h-8 rounded-full gradient-warm flex items-center justify-center text-primary-foreground font-bold text-sm shadow-warm">
+                      <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm shadow-warm">
                         {step.step}
                       </div>
                     </div>
                     
                     {/* Icon */}
                     <div className="mb-6 pt-4">
-                      <div className="w-16 h-16 mx-auto rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                      <div className="w-16 h-16 mx-auto rounded-full bg-accent flex items-center justify-center mb-4">
                         <Icon className="w-8 h-8 text-primary" />
                       </div>
                     </div>
@@ -76,7 +76,7 @@ const WorkflowSection = () => {
 
         {/* Connecting lines for desktop */}
         <div className="hidden md:block relative -mt-32 mb-16">
-          <div className="absolute top-1/2 left-1/4 right-1/4 h-0.5 bg-gradient-to-r from-primary/30 via-primary/60 to-primary/30 transform -translate-y-1/2" />
+          <div className="absolute top-1/2 left-1/4 right-1/4 h-0.5 bg-border transform -translate-y-1/2" />
         </div>
       </div>
     </section>
