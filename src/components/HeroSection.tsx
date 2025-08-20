@@ -84,7 +84,7 @@ const HeroSection = () => {
             Write Smarter with Friends.
           </h1>
           
-          <p className="text-xl sm:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
             Connect with like-minded writers, build lasting friendships, and celebrate success together.
           </p>
           
