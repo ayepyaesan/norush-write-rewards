@@ -90,36 +90,42 @@ export type Database = {
       }
       payments: {
         Row: {
+          admin_notes: string | null
           amount: number
           created_at: string
           id: string
           merchant_phone: string
           payment_code: string | null
           payment_status: string
+          reviewed_at: string | null
           screenshot_url: string | null
           task_id: string
           updated_at: string
           user_id: string | null
         }
         Insert: {
+          admin_notes?: string | null
           amount: number
           created_at?: string
           id?: string
           merchant_phone?: string
           payment_code?: string | null
           payment_status?: string
+          reviewed_at?: string | null
           screenshot_url?: string | null
           task_id: string
           updated_at?: string
           user_id?: string | null
         }
         Update: {
+          admin_notes?: string | null
           amount?: number
           created_at?: string
           id?: string
           merchant_phone?: string
           payment_code?: string | null
           payment_status?: string
+          reviewed_at?: string | null
           screenshot_url?: string | null
           task_id?: string
           updated_at?: string
@@ -139,6 +145,7 @@ export type Database = {
         Row: {
           created_at: string
           full_name: string
+          has_access: boolean | null
           id: string
           kpay_name: string | null
           kpay_phone: string | null
@@ -149,6 +156,7 @@ export type Database = {
         Insert: {
           created_at?: string
           full_name: string
+          has_access?: boolean | null
           id?: string
           kpay_name?: string | null
           kpay_phone?: string | null
@@ -159,6 +167,7 @@ export type Database = {
         Update: {
           created_at?: string
           full_name?: string
+          has_access?: boolean | null
           id?: string
           kpay_name?: string | null
           kpay_phone?: string | null

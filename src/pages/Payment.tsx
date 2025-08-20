@@ -407,14 +407,46 @@ const Payment = () => {
         {currentStep === 4 && (
           <Card className="gradient-card border-0 shadow-warm">
             <CardHeader className="text-center">
-              <div className="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
-                <CheckCircle className="w-8 h-8 text-green-600" />
+              <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${
+                payment?.payment_status === 'approved' 
+                  ? 'bg-green-100' 
+                  : payment?.payment_status === 'rejected' 
+                  ? 'bg-red-100' 
+                  : 'bg-orange-100'
+              }`}>
+                <CheckCircle className={`w-8 h-8 ${
+                  payment?.payment_status === 'approved' 
+                    ? 'text-green-600' 
+                    : payment?.payment_status === 'rejected' 
+                    ? 'text-red-600' 
+                    : 'text-orange-600'
+                }`} />
               </div>
-              <CardTitle className="text-2xl font-bold text-green-600">Payment Submitted!</CardTitle>
-              <CardDescription>Your payment is being verified by our team</CardDescription>
+              <CardTitle className={`text-2xl font-bold ${
+                payment?.payment_status === 'approved' 
+                  ? 'text-green-600' 
+                  : payment?.payment_status === 'rejected' 
+                  ? 'text-red-600' 
+                  : 'text-orange-600'
+              }`}>
+                {payment?.payment_status === 'approved' ? 'Payment Approved!' :
+                 payment?.payment_status === 'rejected' ? 'Payment Rejected' :
+                 'Payment Submitted!'}
+              </CardTitle>
+              <CardDescription>
+                {payment?.payment_status === 'approved' ? 'Your payment has been verified. You can now start your task!' :
+                 payment?.payment_status === 'rejected' ? 'Your payment was rejected by our team. Please try again or contact support.' :
+                 'Your payment is being verified by our team'}
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6 border border-green-200">
+              <div className={`rounded-lg p-6 border ${
+                payment?.payment_status === 'approved' 
+                  ? 'bg-gradient-to-r from-green-50 to-blue-50 border-green-200' 
+                  : payment?.payment_status === 'rejected' 
+                  ? 'bg-gradient-to-r from-red-50 to-orange-50 border-red-200' 
+                  : 'bg-gradient-to-r from-orange-50 to-yellow-50 border-orange-200'
+              }`}>
                 <h3 className="font-semibold text-lg mb-4">Payment Details</h3>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
@@ -431,7 +463,15 @@ const Payment = () => {
                   </div>
                   <div>
                     <span className="text-muted-foreground">Status:</span>
-                    <p className="font-medium text-orange-600">Pending Verification</p>
+                    <p className={`font-medium ${
+                      payment?.payment_status === 'approved' ? 'text-green-600' :
+                      payment?.payment_status === 'rejected' ? 'text-red-600' :
+                      'text-orange-600'
+                    }`}>
+                      {payment?.payment_status === 'approved' ? 'Approved ✓' :
+                       payment?.payment_status === 'rejected' ? 'Rejected ✗' :
+                       'Pending Verification ⏳'}
+                    </p>
                   </div>
                 </div>
                 
@@ -449,16 +489,60 @@ const Payment = () => {
                 )}
               </div>
 
+              {/* Show admin notes if payment was rejected */}
+              {payment?.payment_status === 'rejected' && payment?.admin_notes && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-red-700 mb-2">Rejection Reason:</h4>
+                  <p className="text-red-600 text-sm">{payment.admin_notes}</p>
+                </div>
+              )}
+
               <div className="text-center">
-                <p className="text-sm text-muted-foreground mb-4">
-                  Thank you! Your payment is being verified. You'll receive a notification once approved.
-                </p>
-                <Button 
-                  onClick={() => navigate("/dashboard")} 
-                  className="gradient-warm hover-lift px-8"
-                >
-                  Go to Text Editor
-                </Button>
+                {payment?.payment_status === 'approved' ? (
+                  <div>
+                    <p className="text-sm text-green-600 mb-4">
+                      ✅ Payment approved! You can now start working on your task.
+                    </p>
+                    <Button 
+                      onClick={() => navigate(`/task/${task?.id}`)}
+                      className="gradient-warm hover-lift px-8"
+                    >
+                      Start Working on Task
+                    </Button>
+                  </div>
+                ) : payment?.payment_status === 'rejected' ? (
+                  <div>
+                    <p className="text-sm text-red-600 mb-4">
+                      ❌ Payment rejected. Please upload a new screenshot or contact support.
+                    </p>
+                    <div className="flex gap-3 justify-center">
+                      <Button 
+                        onClick={() => setCurrentStep(3)}
+                        className="gradient-warm hover-lift"
+                      >
+                        Upload New Screenshot
+                      </Button>
+                      <Button 
+                        onClick={() => navigate("/dashboard")}
+                        variant="outline"
+                      >
+                        Back to Dashboard
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      ⏳ Thank you! Your payment is being verified. You'll receive a notification once approved.
+                    </p>
+                    <Button 
+                      onClick={() => navigate("/dashboard")} 
+                      className="gradient-warm hover-lift px-8"
+                    >
+                      Back to Dashboard
+                    </Button>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

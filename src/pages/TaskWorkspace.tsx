@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RefundTracker } from "@/components/RefundTracker";
+import AccessGate from "@/components/AccessGate";
 import { ArrowLeft, Save, FileText, Target, Calendar, DollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -179,12 +180,13 @@ const TaskWorkspace = () => {
   const progressPercentage = todayProgress ? (wordCount / todayProgress.goal_words) * 100 : 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-muted/30 via-background to-muted/20">
-      {/* Background decoration */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-1/4 right-10 w-96 h-96 bg-accent/5 rounded-full blur-3xl animate-float" style={{ animationDelay: "2s" }} />
-      </div>
+    <AccessGate taskId={taskId!}>
+      <div className="min-h-screen bg-gradient-to-br from-muted/30 via-background to-muted/20">
+        {/* Background decoration */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-1/4 left-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl animate-float" />
+          <div className="absolute bottom-1/4 right-10 w-96 h-96 bg-accent/5 rounded-full blur-3xl animate-float" style={{ animationDelay: "2s" }} />
+        </div>
 
       <div className="relative z-10 p-4">
         {/* Header */}
@@ -329,8 +331,9 @@ const TaskWorkspace = () => {
             />
           </TabsContent>
         </Tabs>
+        </div>
       </div>
-    </div>
+    </AccessGate>
   );
 };
 

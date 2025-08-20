@@ -260,16 +260,46 @@ const AdminDashboard = () => {
 
   const handleApproveDeposit = async (depositId: string) => {
     try {
-      const { error } = await supabase
+      // Get the payment details to find the user
+      const { data: payment } = await supabase
         .from('payments')
-        .update({ payment_status: 'approved' })
+        .select('user_id')
+        .eq('id', depositId)
+        .single();
+
+      if (!payment) {
+        toast({
+          title: "Error",
+          description: "Payment not found",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update payment status and reviewed timestamp
+      const { error: paymentError } = await supabase
+        .from('payments')
+        .update({ 
+          payment_status: 'approved',
+          reviewed_at: new Date().toISOString()
+        })
         .eq('id', depositId);
 
-      if (error) throw error;
+      if (paymentError) throw paymentError;
+
+      // Grant user access to task system
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ has_access: true })
+        .eq('user_id', payment.user_id);
+
+      if (profileError) {
+        console.warn('Failed to grant user access:', profileError);
+      }
 
       toast({
         title: "Success",
-        description: "Deposit approved successfully",
+        description: "Payment approved and user granted access",
       });
 
       loadDeposits();
@@ -285,19 +315,47 @@ const AdminDashboard = () => {
 
   const handleRejectDeposit = async (depositId: string, reason: string) => {
     try {
-      const { error } = await supabase
+      // Get the payment details to find the user
+      const { data: payment } = await supabase
+        .from('payments')
+        .select('user_id')
+        .eq('id', depositId)
+        .single();
+
+      if (!payment) {
+        toast({
+          title: "Error",
+          description: "Payment not found",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update payment status with rejection reason
+      const { error: paymentError } = await supabase
         .from('payments')
         .update({ 
           payment_status: 'rejected',
-          // You might want to add a rejection_reason column to the payments table
+          admin_notes: reason,
+          reviewed_at: new Date().toISOString()
         })
         .eq('id', depositId);
 
-      if (error) throw error;
+      if (paymentError) throw paymentError;
+
+      // Ensure user access is revoked
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ has_access: false })
+        .eq('user_id', payment.user_id);
+
+      if (profileError) {
+        console.warn('Failed to revoke user access:', profileError);
+      }
 
       toast({
         title: "Success",
-        description: "Deposit rejected",
+        description: "Payment rejected and user access revoked",
       });
 
       setSelectedDeposit(null);
