@@ -288,9 +288,9 @@ const Payment = () => {
                 {/* QR Code */}
                 <div className="w-48 h-48 mx-auto bg-white border-2 border-gray-200 rounded-lg flex items-center justify-center mb-4">
                   <img 
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${merchantPhone}_${payment?.amount}`}
-                    alt="Payment QR Code"
-                    className="w-44 h-44"
+                    src="/lovable-uploads/5e3bb884-9ee3-4121-a659-4669641e6827.png"
+                    alt="KBZPay QR Code"
+                    className="w-44 h-44 object-contain"
                   />
                 </div>
                 
