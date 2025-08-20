@@ -5,7 +5,7 @@ import { ArrowRight, BookOpen, Edit3, Award, FileText, Sparkles } from "lucide-r
 const HeroSection = () => {
   return (
     <section
-      className="relative min-h-screen flex items-center justify-center overflow-hidden"
+      className="relative h-screen flex items-center justify-center overflow-hidden"
       style={{
         backgroundImage: "url('/lovable-uploads/8c7de7ef-e498-43dc-b0c6-dd82690536bc.png')",
         backgroundSize: "cover",
@@ -13,8 +13,11 @@ const HeroSection = () => {
         backgroundRepeat: "no-repeat",
       }}
     >
+      {/* Background Overlay for 80% opacity */}
+      <div className="absolute inset-0 bg-background/20" />
+      
       {/* Animated Background Objects */}
-      <div className="absolute inset-0 pointer-events-none">
+      <div className="absolute inset-0 pointer-events-none z-10">
         {/* Notebooks */}
         <div className="absolute top-1/4 left-1/6 animate-bob opacity-60">
           <BookOpen className="w-12 h-12 text-primary/40 drop-shadow-md" style={{ animationDelay: "0s" }} />
@@ -71,7 +74,7 @@ const HeroSection = () => {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 text-center px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
+      <div className="relative z-20 text-center px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
         <div className="animate-fade-in">
           <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-foreground mb-6 leading-tight">
             Stay Consistent.
