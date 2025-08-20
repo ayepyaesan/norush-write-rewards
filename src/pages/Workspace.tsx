@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, User, Shield } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-
+import AdminSeeder from "@/components/AdminSeeder";
 
 const Workspace = () => {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -17,123 +17,130 @@ const Workspace = () => {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [kpayName, setKpayName] = useState("");
-  const [kpayPhone, setKpayPhone] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    // Check if user is already logged in
+    checkExistingSession();
+  }, []);
+
+  const checkExistingSession = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (session?.user) {
+      // User is already logged in, fetch their profile and redirect
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (profile) {
+        if (profile.role === 'admin') {
+          navigate('/admin/dashboard');
+        } else {
+          navigate('/user/dashboard');
+        }
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     
-    if (isSignUp) {
-      setIsLoading(true);
-      
-      try {
-        // Validate required fields for users
-        if (role === "user" && (!kpayName.trim() || !kpayPhone.trim())) {
-          toast({
-            title: "Missing Information",
-            description: "Please fill in all payment information fields.",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        const { error } = await supabase
-          .from('signup_requests')
-          .insert({
-            full_name: fullName.trim(),
-            email: email.trim().toLowerCase(),
-            password: password,
-            role: role,
-            kpay_name: role === "user" ? kpayName.trim() : null,
-            kpay_phone: role === "user" ? kpayPhone.trim() : null,
-          });
+    try {
+      if (isSignUp) {
+        // Sign up new user
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim().toLowerCase(),
+          password: password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+            data: {
+              full_name: fullName.trim(),
+              role: role
+            }
+          }
+        });
 
         if (error) {
-          if (error.code === '23505') {
+          if (error.message.includes('already registered')) {
             toast({
               title: "Email Already Exists",
-              description: "An account with this email already exists.",
+              description: "An account with this email already exists. Please sign in instead.",
               variant: "destructive",
             });
           } else {
             toast({
-              title: "Error",
-              description: "Failed to create account. Please try again.",
+              title: "Sign Up Failed",
+              description: error.message,
               variant: "destructive",
             });
           }
-        } else {
+        } else if (data.user) {
           toast({
             title: "Account Created!",
-            description: "Your account request has been submitted successfully.",
+            description: "Please check your email to confirm your account.",
           });
           
           // Reset form
           setFullName("");
           setEmail("");
           setPassword("");
-          setKpayName("");
-          setKpayPhone("");
           setRole("user");
         }
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "An unexpected error occurred. Please try again.",
-          variant: "destructive",
+      } else {
+        // Sign in existing user
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email.trim().toLowerCase(),
+          password: password,
         });
-      } finally {
-        setIsLoading(false);
-      }
-    } else {
-      // Handle sign in - check against signup_requests for demo purposes
-      setIsLoading(true);
-      
-      try {
-        const { data: user, error } = await supabase
-          .from('signup_requests')
-          .select('*')
-          .eq('email', email.trim().toLowerCase())
-          .eq('password', password)
-          .single();
 
-        if (error || !user) {
+        if (error) {
           toast({
             title: "Sign In Failed",
             description: "Invalid email or password. Please try again.",
             variant: "destructive",
           });
-        } else {
+        } else if (data.user) {
+          // Fetch user profile to determine role
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('user_id', data.user.id)
+            .single();
+
           toast({
             title: "Welcome back!",
-            description: `Signed in as ${user.full_name}`,
+            description: `Signed in successfully`,
           });
-          
-          // For demo purposes, we'll redirect to task creation
-          // In a real app, you'd use proper Supabase auth
-          if (user.role === "user") {
-            navigate("/task-creation");
+
+          // Redirect based on role
+          if (profile?.role === 'admin') {
+            navigate('/admin/dashboard');
           } else {
-            navigate("/dashboard");
+            navigate('/user/dashboard');
           }
         }
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "An unexpected error occurred. Please try again.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
       }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-muted/30 via-background to-muted/20 flex items-center justify-center p-4">
+      <AdminSeeder />
+      
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl animate-float" />
@@ -278,41 +285,10 @@ const Workspace = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
+                      minLength={6}
                       className="transition-all duration-300 focus:ring-2 focus:ring-primary/50"
                     />
                   </div>
-                  
-                  {role === "user" && (
-                    <>
-                      <div className="pt-4">
-                        <h3 className="text-lg font-semibold text-foreground mb-4">Payment Information</h3>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="kpay-name">Kpay Name</Label>
-                        <Input
-                          id="kpay-name"
-                          type="text"
-                          placeholder="Your Kpay name"
-                          value={kpayName}
-                          onChange={(e) => setKpayName(e.target.value)}
-                          required
-                          className="transition-all duration-300 focus:ring-2 focus:ring-primary/50"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="kpay-phone">Kpay Phone Number</Label>
-                        <Input
-                          id="kpay-phone"
-                          type="tel"
-                          placeholder="09xxxxxxxxx"
-                          value={kpayPhone}
-                          onChange={(e) => setKpayPhone(e.target.value)}
-                          required
-                          className="transition-all duration-300 focus:ring-2 focus:ring-primary/50"
-                        />
-                      </div>
-                    </>
-                  )}
                   
                   <Button 
                     type="submit" 
@@ -333,7 +309,6 @@ const Workspace = () => {
           </CardContent>
         </Card>
       </div>
-      
     </div>
   );
 };

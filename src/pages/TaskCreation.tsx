@@ -1,14 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Calculator } from "lucide-react";
+import { ArrowLeft, FileText, Calculator, Calendar, LogOut } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 const TaskCreation = () => {
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   const [taskName, setTaskName] = useState("");
   const [wordCount, setWordCount] = useState("");
   const [durationDays, setDurationDays] = useState("");
@@ -16,19 +18,41 @@ const TaskCreation = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const calculateDeposit = (words: number) => {
-    return words * 50; // 1 word = 50 MMK
+  useEffect(() => {
+    checkUser();
+  }, []);
+
+  const checkUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      navigate("/workspace");
+      return;
+    }
+
+    setUser(user);
   };
 
-  const depositAmount = wordCount ? calculateDeposit(parseInt(wordCount) || 0) : 0;
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
+  };
+
+  const depositAmount = wordCount ? parseInt(wordCount) * 50 : 0;
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-muted/30 via-background to-muted/20 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
       if (!user) {
         toast({
           title: "Authentication Required",
@@ -97,7 +121,7 @@ const TaskCreation = () => {
         <Card className="gradient-card border-0 shadow-warm">
           <CardHeader className="text-center space-y-4">
             <div className="w-16 h-16 mx-auto rounded-full gradient-warm flex items-center justify-center shadow-warm">
-              <Calculator className="text-2xl text-primary-foreground" />
+              <FileText className="w-8 h-8 text-primary-foreground" />
             </div>
             <CardTitle className="text-2xl font-bold text-foreground">
               Create Your Writing Task
