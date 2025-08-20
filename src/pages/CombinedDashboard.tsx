@@ -367,6 +367,17 @@ const CombinedDashboard = () => {
 
           {/* Write Tab */}
           <TabsContent value="write" className="space-y-6">
+            {/* Daily Milestone Tracker - Compact Header */}
+            {selectedTask && (
+              <DailyMilestoneCounter
+                taskWordCount={selectedTask.word_count}
+                taskDurationDays={selectedTask.duration_days}
+                taskCreatedAt={selectedTask.created_at}
+                currentWordCount={writingText.trim().split(/\s+/).filter(word => word.length > 0).length}
+                className="max-w-4xl mx-auto"
+              />
+            )}
+            
             {/* Writing Area - Full Width */}
             <div className="w-full">
               <Card className="gradient-card border-0 shadow-warm h-[700px] flex flex-col">
