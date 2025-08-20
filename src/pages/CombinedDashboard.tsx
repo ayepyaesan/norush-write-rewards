@@ -367,23 +367,9 @@ const CombinedDashboard = () => {
 
           {/* Write Tab */}
           <TabsContent value="write" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-              {/* Tasks Sidebar */}
-              <div className="lg:col-span-1">
-                <Card className="gradient-card border-0 shadow-warm">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <FileText className="w-5 h-5" />
-                      Your Tasks
-                    </CardTitle>
-                    <CardDescription>Click on a task to start writing</CardDescription>
-                   </CardHeader>
-                 </Card>
-               </div>
-
-              {/* Writing Area */}
-              <div className="lg:col-span-2">
-                <Card className="gradient-card border-0 shadow-warm h-[600px] flex flex-col">
+            {/* Writing Area - Full Width */}
+            <div className="w-full">
+              <Card className="gradient-card border-0 shadow-warm h-[700px] flex flex-col">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <PenTool className="w-5 h-5" />
@@ -435,60 +421,6 @@ const CombinedDashboard = () => {
                     )}
                   </CardContent>
                 </Card>
-              </div>
-
-              {/* Daily Milestone Counter - Fixed in right corner */}
-              <div className="lg:col-span-1">
-                {selectedTask ? (
-                  <div className="sticky top-4 space-y-4">
-                    <DailyMilestoneCounter
-                      taskWordCount={selectedTask.word_count}
-                      taskDurationDays={selectedTask.duration_days}
-                      taskCreatedAt={selectedTask.created_at}
-                      currentWordCount={writingText.trim().split(/\s+/).filter(word => word.length > 0).length}
-                    />
-                    
-                    {/* Additional Quick Stats */}
-                    <Card className="border-2 border-primary/20 bg-primary/5">
-                      <CardContent className="p-4">
-                        <div className="space-y-3">
-                          <div className="text-center">
-                            <div className="text-sm font-medium text-muted-foreground">Total Progress</div>
-                            <div className="text-2xl font-bold text-primary">
-                              {Math.min(((writingText.trim().split(/\s+/).filter(word => word.length > 0).length) / selectedTask.word_count) * 100, 100).toFixed(1)}%
-                            </div>
-                          </div>
-                          
-                          <div className="grid grid-cols-2 gap-2 text-center">
-                            <div>
-                              <div className="text-xs text-muted-foreground">Remaining</div>
-                              <div className="text-sm font-semibold">
-                                {Math.max(selectedTask.word_count - writingText.trim().split(/\s+/).filter(word => word.length > 0).length, 0).toLocaleString()}
-                              </div>
-                            </div>
-                            <div>
-                              <div className="text-xs text-muted-foreground">Deposit</div>
-                              <div className="text-sm font-semibold text-green-600">
-                                {selectedTask.deposit_amount?.toLocaleString()} MMK
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                ) : (
-                  <Card className="gradient-card border-0 shadow-warm">
-                    <CardContent className="p-6 text-center">
-                      <Target className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                      <h3 className="text-lg font-medium mb-2">Daily Milestone Tracker</h3>
-                      <p className="text-muted-foreground text-sm">
-                        Select a task to see your daily writing milestones and track your progress automatically.
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
             </div>
           </TabsContent>
 
