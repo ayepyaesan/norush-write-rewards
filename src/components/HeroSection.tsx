@@ -5,7 +5,13 @@ import { ArrowRight, BookOpen, Edit3, Award, FileText, Sparkles } from "lucide-r
 const HeroSection = () => {
   return (
     <section
-      className="relative min-h-screen flex items-center justify-center overflow-hidden gradient-hero"
+      className="relative min-h-screen flex items-center justify-center overflow-hidden"
+      style={{
+        backgroundImage: "url('/lovable-uploads/8c7de7ef-e498-43dc-b0c6-dd82690536bc.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      }}
     >
       {/* Animated Background Objects */}
       <div className="absolute inset-0 pointer-events-none">
