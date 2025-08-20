@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Navigation from "@/components/Navigation";
+import AnimatedBackground from "@/components/AnimatedBackground";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,11 +67,12 @@ const Contact = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen gradient-hero relative">
+      <AnimatedBackground density="light" />
       <Navigation />
       
       {/* Hero Section */}
-      <section className="pt-24 pb-16 bg-gradient-to-br from-muted/30 to-background">
+      <section className="relative pt-24 pb-16">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center animate-fade-in">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6">
@@ -84,12 +86,12 @@ const Contact = () => {
       </section>
 
       {/* Contact Form and Info */}
-      <section className="py-20">
+      <section className="relative py-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
             {/* Contact Form */}
             <div className="animate-slide-up">
-              <Card className="gradient-card border-0 shadow-warm">
+              <Card className="bg-card border border-border shadow-warm">
                 <CardHeader>
                   <CardTitle className="text-2xl font-bold text-foreground flex items-center">
                     <MessageCircle className="w-6 h-6 mr-3 text-primary" />
@@ -137,7 +139,7 @@ const Contact = () => {
                         className="transition-all duration-300 focus:ring-2 focus:ring-primary/50 resize-none"
                       />
                     </div>
-                    <Button type="submit" className="w-full gradient-warm hover-lift">
+                    <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 hover-lift glow-effect">
                       <Send className="w-4 h-4 mr-2" />
                       Send Message
                     </Button>
@@ -149,10 +151,10 @@ const Contact = () => {
             {/* Contact Info */}
             <div className="animate-slide-up" style={{ animationDelay: "0.2s" }}>
               <div className="space-y-8">
-                <Card className="gradient-card border-0 shadow-card">
+                <Card className="bg-card border border-border shadow-card">
                   <CardContent className="p-6">
                     <div className="flex items-start space-x-4">
-                      <div className="w-12 h-12 rounded-full gradient-warm flex items-center justify-center shadow-warm">
+                      <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center shadow-warm">
                         <Mail className="w-6 h-6 text-primary-foreground" />
                       </div>
                       <div>
@@ -171,25 +173,25 @@ const Contact = () => {
                   </CardContent>
                 </Card>
 
-                <Card className="gradient-card border-0 shadow-card">
+                <Card className="bg-card border border-border shadow-card">
                   <CardContent className="p-6">
                     <h3 className="text-lg font-semibold text-foreground mb-4">Follow Us</h3>
                     <div className="flex space-x-4">
                       <a 
                         href="#" 
-                        className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300 hover-lift"
+                        className="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300 hover-lift"
                       >
                         <span className="text-sm font-bold">𝕏</span>
                       </a>
                       <a 
                         href="#" 
-                        className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300 hover-lift"
+                        className="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300 hover-lift"
                       >
                         <span className="text-sm font-bold">in</span>
                       </a>
                       <a 
                         href="#" 
-                        className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300 hover-lift"
+                        className="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300 hover-lift"
                       >
                         <span className="text-sm font-bold">fb</span>
                       </a>
@@ -203,21 +205,21 @@ const Contact = () => {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-20 bg-muted/20">
+      <section className="relative py-20 bg-accent">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-16 animate-fade-in">
-              <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-6 flex items-center justify-center">
+              <h2 className="text-3xl sm:text-4xl font-bold text-accent-foreground mb-6 flex items-center justify-center">
                 <HelpCircle className="w-8 h-8 mr-3 text-primary" />
                 Frequently Asked Questions
               </h2>
-              <p className="text-xl text-muted-foreground">
+              <p className="text-xl text-accent-foreground/80">
                 Find answers to common questions about NoRush
               </p>
             </div>
 
             <div className="animate-slide-up">
-              <Card className="gradient-card border-0 shadow-card">
+              <Card className="bg-card border border-border shadow-card">
                 <CardContent className="p-8">
                   <Accordion type="single" collapsible className="w-full">
                     {faqs.map((faq, index) => (
