@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, User, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
-import Footer from "@/components/Footer";
+
 
 const Workspace = () => {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -165,7 +165,7 @@ const Workspace = () => {
           </CardContent>
         </Card>
       </div>
-      <Footer />
+      
     </div>
   );
 };
