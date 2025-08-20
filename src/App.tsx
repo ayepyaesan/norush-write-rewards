@@ -11,6 +11,7 @@ import TaskCreation from "./pages/TaskCreation";
 import Payment from "./pages/Payment";
 import Dashboard from "./pages/Dashboard";
 import TaskWorkspace from "./pages/TaskWorkspace";
+import RefundSummary from "./pages/RefundSummary";
 import UserDashboard from "./pages/UserDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="/payment/:taskId" element={<Payment />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/task/:taskId" element={<TaskWorkspace />} />
+          <Route path="/refund/:taskId" element={<RefundSummary />} />
           <Route path="/user/dashboard" element={<UserDashboard />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
