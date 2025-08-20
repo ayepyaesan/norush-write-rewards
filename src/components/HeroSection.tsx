@@ -77,15 +77,15 @@ const HeroSection = () => {
       <div className="relative z-20 text-center px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
         <div className="animate-fade-in">
           <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-foreground mb-6 leading-tight">
-            Stay Consistent.
+            Join Our Community.
             <br />
-            <span className="text-primary">Meet Your Deadlines.</span>
+            <span className="text-primary">Achieve Together.</span>
             <br />
-            Write Smarter with NoRush.
+            Write Smarter with Friends.
           </h1>
           
           <p className="text-xl sm:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
-            Avoid last-minute panic, and build quality work habits.
+            Connect with like-minded writers, build lasting friendships, and celebrate success together.
           </p>
           
           <div className="animate-slide-up" style={{ animationDelay: "0.3s" }}>
