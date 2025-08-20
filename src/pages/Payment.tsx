@@ -288,7 +288,7 @@ const Payment = () => {
                 {/* QR Code */}
                 <div className="w-48 h-48 mx-auto bg-white border-2 border-gray-200 rounded-lg flex items-center justify-center mb-4">
                   <img 
-                    src="/lovable-uploads/5e3bb884-9ee3-4121-a659-4669641e6827.png"
+                    src="/lovable-uploads/4db469ad-6f21-4b04-bb74-0957bb54d53f.png"
                     alt="KBZPay QR Code"
                     className="w-44 h-44 object-contain"
                   />
