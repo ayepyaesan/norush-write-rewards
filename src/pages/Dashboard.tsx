@@ -177,12 +177,8 @@ const Dashboard = () => {
                     tasks.map((task) => (
                       <div
                         key={task.id}
-                        onClick={() => setSelectedTask(task)}
-                        className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 hover:shadow-md ${
-                          selectedTask?.id === task.id 
-                            ? 'border-primary bg-primary/5' 
-                            : 'border-border bg-card hover:border-primary/50'
-                        }`}
+                        onClick={() => navigate(`/task/${task.id}`)}
+                        className="p-4 rounded-lg border cursor-pointer transition-all duration-200 hover:shadow-md border-border bg-card hover:border-primary/50"
                       >
                         <h3 className="font-medium text-sm mb-2 truncate">{task.task_name}</h3>
                         <div className="flex justify-between items-center text-xs text-muted-foreground mb-2">

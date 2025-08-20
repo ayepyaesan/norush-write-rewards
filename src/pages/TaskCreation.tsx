@@ -38,7 +38,8 @@ const TaskCreation = () => {
     navigate("/");
   };
 
-  const depositAmount = wordCount ? parseInt(wordCount) * 50 : 0;
+  const BASE_RATE_PER_WORD = 30; // MMK per word
+  const depositAmount = wordCount ? parseInt(wordCount) * BASE_RATE_PER_WORD : 0;
 
   if (!user) {
     return (
@@ -63,6 +64,10 @@ const TaskCreation = () => {
         return;
       }
 
+      // Calculate deadline
+      const deadline = new Date();
+      deadline.setDate(deadline.getDate() + parseInt(durationDays));
+
       const { data: task, error } = await supabase
         .from('tasks')
         .insert({
@@ -71,18 +76,37 @@ const TaskCreation = () => {
           word_count: parseInt(wordCount),
           duration_days: parseInt(durationDays),
           deposit_amount: depositAmount,
+          deadline: deadline.toISOString().split('T')[0],
+          base_rate_per_word: BASE_RATE_PER_WORD,
           status: 'pending'
         })
         .select()
         .single();
 
       if (error) {
+        console.error('Task creation error:', error);
         toast({
           title: "Error",
           description: "Failed to create task. Please try again.",
           variant: "destructive",
         });
       } else {
+        // Generate daily progress entries
+        try {
+          const { error: progressError } = await supabase.rpc('generate_daily_progress_entries', {
+            p_task_id: task.id,
+            p_user_id: user.id,
+            p_word_count: parseInt(wordCount),
+            p_duration_days: parseInt(durationDays)
+          });
+
+          if (progressError) {
+            console.error('Progress generation error:', progressError);
+          }
+        } catch (progressErr) {
+          console.error('Progress generation failed:', progressErr);
+        }
+
         toast({
           title: "Task Created!",
           description: "Proceeding to payment...",
@@ -184,7 +208,7 @@ const TaskCreation = () => {
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    1 word = 50 MMK • {wordCount} words × 50 MMK
+                    1 word = {BASE_RATE_PER_WORD} MMK • {wordCount} words × {BASE_RATE_PER_WORD} MMK
                   </p>
                 </div>
               )}
