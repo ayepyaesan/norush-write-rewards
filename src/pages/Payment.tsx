@@ -125,7 +125,7 @@ const Payment = () => {
       if (!user) return;
 
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}_${taskId}_${Date.now()}.${fileExt}`;
+      const fileName = `${user.id}/${taskId}_${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from('payment_screenshots')
