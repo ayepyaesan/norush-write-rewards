@@ -8,24 +8,92 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, User, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 
 const Workspace = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [role, setRole] = useState("user");
   const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [kpayName, setKpayName] = useState("");
   const [kpayPhone, setKpayPhone] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: isSignUp ? "Account Created!" : "Welcome back!",
-      description: isSignUp 
-        ? "Your account has been created successfully." 
-        : "You have been signed in successfully.",
-    });
+    
+    if (isSignUp) {
+      setIsLoading(true);
+      
+      try {
+        // Validate required fields for users
+        if (role === "user" && (!kpayName.trim() || !kpayPhone.trim())) {
+          toast({
+            title: "Missing Information",
+            description: "Please fill in all payment information fields.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const { error } = await supabase
+          .from('signup_requests')
+          .insert({
+            full_name: fullName.trim(),
+            email: email.trim().toLowerCase(),
+            password: password,
+            role: role,
+            kpay_name: role === "user" ? kpayName.trim() : null,
+            kpay_phone: role === "user" ? kpayPhone.trim() : null,
+          });
+
+        if (error) {
+          if (error.code === '23505') {
+            toast({
+              title: "Email Already Exists",
+              description: "An account with this email already exists.",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Error",
+              description: "Failed to create account. Please try again.",
+              variant: "destructive",
+            });
+          }
+        } else {
+          toast({
+            title: "Account Created!",
+            description: "Your account request has been submitted successfully.",
+          });
+          
+          // Reset form
+          setFullName("");
+          setEmail("");
+          setPassword("");
+          setKpayName("");
+          setKpayPhone("");
+          setRole("user");
+        }
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "An unexpected error occurred. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      // Handle sign in (placeholder for now)
+      toast({
+        title: "Welcome back!",
+        description: "Sign in functionality will be implemented soon.",
+      });
+    }
   };
 
   return (
@@ -151,6 +219,8 @@ const Workspace = () => {
                       id="signup-email"
                       type="email"
                       placeholder="your@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       required
                       className="transition-all duration-300 focus:ring-2 focus:ring-primary/50"
                     />
@@ -161,6 +231,8 @@ const Workspace = () => {
                       id="signup-password"
                       type="password"
                       placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
                       required
                       className="transition-all duration-300 focus:ring-2 focus:ring-primary/50"
                     />
@@ -198,8 +270,12 @@ const Workspace = () => {
                     </>
                   )}
                   
-                  <Button type="submit" className="w-full gradient-warm hover-lift">
-                    Create Account
+                  <Button 
+                    type="submit" 
+                    className="w-full gradient-warm hover-lift"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Creating Account..." : "Create Account"}
                   </Button>
                 </form>
               </TabsContent>
