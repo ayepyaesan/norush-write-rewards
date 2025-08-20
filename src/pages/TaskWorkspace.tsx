@@ -295,89 +295,43 @@ const TaskWorkspace = () => {
               </Card>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Main Writing Area */}
-            <div className="lg:col-span-3">
-              <Card className="gradient-card">
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span>Your Writing Space</span>
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => navigate(`/editor/${taskId}`)}
-                        className="hover-lift"
-                      >
-                        <FileText className="w-4 h-4 mr-2" />
-                        Rich Text Editor
-                      </Button>
-                      <Button
-                        onClick={handleSaveProgress}
-                        disabled={isSaving || !todayProgress}
-                        className="gradient-warm hover-lift"
-                      >
-                        <Save className="w-4 h-4 mr-2" />
-                        {isSaving ? "Saving..." : "Save Progress"}
-                      </Button>
-                    </div>
-                  </CardTitle>
-                  <CardDescription>
-                    Write your content here. Your progress will be automatically tracked. Use the Rich Text Editor for Microsoft Word-like formatting.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Textarea
-                    placeholder="Start writing your content here..."
-                    value={writingText}
-                    onChange={(e) => setWritingText(e.target.value)}
-                    className="min-h-[500px] resize-none border-0 bg-background/30 focus:bg-background/50 transition-all duration-300"
-                  />
-                </CardContent>
-              </Card>
-            </div>
-
-              {/* Daily Milestone Counter - Fixed in top-right corner */}
-              <div className="lg:col-span-1">
-                <div className="sticky top-4">
-                  <DailyMilestoneCounter
-                    taskWordCount={task.word_count}
-                    taskDurationDays={task.duration_days}
-                    taskCreatedAt={task.created_at}
-                    currentWordCount={wordCount}
-                    className="mb-4"
-                  />
-                  
-                  {/* Additional Progress Info */}
-                  <Card className="gradient-card">
-                    <CardContent className="p-4">
-                      <div className="space-y-3">
-                        <div className="text-center">
-                          <div className="text-sm font-medium text-muted-foreground">Today's Goal</div>
-                          <div className="text-lg font-bold">
-                            {todayProgress ? todayProgress.goal_words.toLocaleString() : "N/A"} words
-                          </div>
-                        </div>
-                        
-                        <div className="text-center">
-                          <div className="text-sm font-medium text-muted-foreground">Current Progress</div>
-                          <div className="text-2xl font-bold text-primary">
-                            {progressPercentage.toFixed(1)}%
-                          </div>
-                        </div>
-                        
-                        {progressPercentage >= 100 && (
-                          <div className="text-center bg-green-100 dark:bg-green-900 rounded-lg p-2">
-                            <div className="text-green-700 dark:text-green-300 text-sm font-medium">
-                              🎉 Daily Goal Achieved!
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            </div>
+            {/* Main Writing Area - Full Width */}
+            <Card className="gradient-card">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Your Writing Space</span>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate(`/editor/${taskId}`)}
+                      className="hover-lift"
+                    >
+                      <FileText className="w-4 h-4 mr-2" />
+                      Rich Text Editor
+                    </Button>
+                    <Button
+                      onClick={handleSaveProgress}
+                      disabled={isSaving || !todayProgress}
+                      className="gradient-warm hover-lift"
+                    >
+                      <Save className="w-4 h-4 mr-2" />
+                      {isSaving ? "Saving..." : "Save Progress"}
+                    </Button>
+                  </div>
+                </CardTitle>
+                <CardDescription>
+                  Write your content here. Your progress will be automatically tracked. Use the Rich Text Editor for Microsoft Word-like formatting.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Textarea
+                  placeholder="Start writing your content here..."
+                  value={writingText}
+                  onChange={(e) => setWritingText(e.target.value)}
+                  className="min-h-[600px] resize-none border-0 bg-background/30 focus:bg-background/50 transition-all duration-300"
+                />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="progress">
