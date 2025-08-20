@@ -377,46 +377,9 @@ const CombinedDashboard = () => {
                       Your Tasks
                     </CardTitle>
                     <CardDescription>Click on a task to start writing</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {tasks.length === 0 ? (
-                        <div className="text-center py-8">
-                          <FileText className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                          <p className="text-muted-foreground mb-4">No tasks yet</p>
-                          <Button onClick={navigateToTaskCreation} variant="outline" size="sm">
-                            Create Your First Task
-                          </Button>
-                        </div>
-                      ) : (
-                        tasks.map((task) => (
-                          <div
-                            key={task.id}
-                            onClick={() => setSelectedTask(task)}
-                            className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 hover:shadow-md ${
-                              selectedTask?.id === task.id 
-                                ? 'border-primary bg-primary/5' 
-                                : 'border-border bg-card hover:border-primary/50'
-                            }`}
-                          >
-                            <h3 className="font-medium text-sm mb-2 truncate">{task.task_name}</h3>
-                            <div className="flex justify-between items-center text-xs text-muted-foreground mb-2">
-                              <span>{task.word_count?.toLocaleString()} words</span>
-                              <span className="flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                {task.duration_days}d
-                              </span>
-                            </div>
-                            <div className={`text-xs font-medium ${getTaskStatusColor(task)}`}>
-                              {getTaskStatusText(task)}
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+                   </CardHeader>
+                 </Card>
+               </div>
 
               {/* Writing Area */}
               <div className="lg:col-span-2">
