@@ -13,6 +13,7 @@ import Dashboard from "./pages/Dashboard";
 import TaskWorkspace from "./pages/TaskWorkspace";
 import RefundSummary from "./pages/RefundSummary";
 import UserDashboard from "./pages/UserDashboard";
+import CombinedDashboard from "./pages/CombinedDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
@@ -31,7 +32,8 @@ const App = () => (
           <Route path="/workspace" element={<Workspace />} />
           <Route path="/task-creation" element={<TaskCreation />} />
           <Route path="/payment/:taskId" element={<Payment />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard" element={<CombinedDashboard />} />
+          <Route path="/old-dashboard" element={<Dashboard />} />
           <Route path="/task/:taskId" element={<TaskWorkspace />} />
           <Route path="/refund/:taskId" element={<RefundSummary />} />
           <Route path="/user/dashboard" element={<UserDashboard />} />
