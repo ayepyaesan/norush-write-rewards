@@ -13,6 +13,7 @@ import TaskWorkspace from "./pages/TaskWorkspace";
 import RefundSummary from "./pages/RefundSummary";
 import CombinedDashboard from "./pages/CombinedDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import RichTextEditorPage from "./pages/RichTextEditorPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/task/:taskId" element={<TaskWorkspace />} />
           <Route path="/refund/:taskId" element={<RefundSummary />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/editor/:taskId?" element={<RichTextEditorPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

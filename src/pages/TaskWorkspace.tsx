@@ -296,12 +296,21 @@ const TaskWorkspace = () => {
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              {/* Main Writing Area */}
-              <div className="lg:col-span-3">
-                <Card className="gradient-card">
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <span>Your Writing Space</span>
+            {/* Main Writing Area */}
+            <div className="lg:col-span-3">
+              <Card className="gradient-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>Your Writing Space</span>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => navigate(`/editor/${taskId}`)}
+                        className="hover-lift"
+                      >
+                        <FileText className="w-4 h-4 mr-2" />
+                        Rich Text Editor
+                      </Button>
                       <Button
                         onClick={handleSaveProgress}
                         disabled={isSaving || !todayProgress}
@@ -310,21 +319,22 @@ const TaskWorkspace = () => {
                         <Save className="w-4 h-4 mr-2" />
                         {isSaving ? "Saving..." : "Save Progress"}
                       </Button>
-                    </CardTitle>
-                    <CardDescription>
-                      Write your content here. Your progress will be automatically tracked.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Textarea
-                      placeholder="Start writing your content here..."
-                      value={writingText}
-                      onChange={(e) => setWritingText(e.target.value)}
-                      className="min-h-[500px] resize-none border-0 bg-background/30 focus:bg-background/50 transition-all duration-300"
-                    />
-                  </CardContent>
-                </Card>
-              </div>
+                    </div>
+                  </CardTitle>
+                  <CardDescription>
+                    Write your content here. Your progress will be automatically tracked. Use the Rich Text Editor for Microsoft Word-like formatting.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Textarea
+                    placeholder="Start writing your content here..."
+                    value={writingText}
+                    onChange={(e) => setWritingText(e.target.value)}
+                    className="min-h-[500px] resize-none border-0 bg-background/30 focus:bg-background/50 transition-all duration-300"
+                  />
+                </CardContent>
+              </Card>
+            </div>
 
               {/* Daily Milestone Counter - Fixed in top-right corner */}
               <div className="lg:col-span-1">
