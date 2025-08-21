@@ -393,14 +393,11 @@ const RefundMenu = () => {
                          <div className="text-sm text-muted-foreground">
                            Day {refund.day_number} • {refund.task_status}
                          </div>
-                         <div className="text-xs text-blue-600 mt-1">
-                           Task File: {refund.task_file_title || 'No file found'}
-                         </div>
-                         {refund.task_name.includes('Unknown Task') && (
-                           <div className="text-xs text-orange-600 mt-1">
-                             ⚠️ Task data missing
-                           </div>
-                         )}
+                          {refund.task_name.includes('Unknown Task') && (
+                            <div className="text-xs text-orange-600 mt-1">
+                              ⚠️ Task data missing
+                            </div>
+                          )}
                        </div>
                      </TableCell>
                     <TableCell>
