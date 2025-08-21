@@ -200,6 +200,7 @@ const UserDashboard = () => {
     if (!deposit) return "text-yellow-600";
     if (deposit.payment_status === 'verified') return "text-green-600";
     if (deposit.screenshot_url && deposit.payment_status === 'pending') return "text-orange-600";
+    if (deposit.payment_status === 'pending' && !deposit.screenshot_url) return "text-blue-600";
     return "text-red-600";
   };
 
@@ -208,6 +209,7 @@ const UserDashboard = () => {
     if (!deposit) return "Payment Required";
     if (deposit.payment_status === 'verified') return "Active";
     if (deposit.screenshot_url && deposit.payment_status === 'pending') return "Verification Pending";
+    if (deposit.payment_status === 'pending' && !deposit.screenshot_url) return "Upload Payment Proof";
     return "Payment Required";
   };
 
@@ -434,17 +436,28 @@ const UserDashboard = () => {
                         <div className="bg-warning/10 border border-warning/20 rounded-lg p-3 mt-4">
                           <div className="flex items-center gap-2 text-warning">
                             <AlertCircle className="w-4 h-4" />
-                            <span className="text-sm font-medium">Payment Required</span>
+                            <span className="text-sm font-medium">
+                              {deposit?.payment_status === 'pending' && !deposit?.screenshot_url 
+                                ? "Upload Payment Proof" 
+                                : "Payment Required"
+                              }
+                            </span>
                           </div>
                           <p className="text-xs text-muted-foreground mt-1">
-                            Complete payment verification to start writing
+                            {deposit?.payment_status === 'pending' && !deposit?.screenshot_url
+                              ? "Please upload your payment screenshot to verify your payment"
+                              : "Complete payment verification to start writing"
+                            }
                           </p>
                           <Button 
                             size="sm" 
                             className="mt-2"
                             onClick={() => navigate(`/payment/${task.id}`)}
                           >
-                            Complete Payment
+                            {deposit?.payment_status === 'pending' && !deposit?.screenshot_url
+                              ? "Upload Screenshot"
+                              : "Complete Payment"
+                            }
                           </Button>
                         </div>
                       )}
