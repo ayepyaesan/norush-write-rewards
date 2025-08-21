@@ -403,10 +403,6 @@ const UserDashboard = () => {
                           <div className="text-lg font-bold text-primary">{dailyTarget}</div>
                           <div className="text-xs text-muted-foreground">Words/Day</div>
                         </div>
-                        <div className="text-center">
-                          <div className="text-lg font-bold text-mint">{totalRefundEarned.toLocaleString()}</div>
-                          <div className="text-xs text-muted-foreground">Refund Earned</div>
-                        </div>
                       </div>
 
                       {/* Task Structure Overview */}
