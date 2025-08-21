@@ -82,9 +82,9 @@ const HeroSection = () => {
             Write Smarter with <span className="text-primary">No Rush.</span>
           </h1>
           
-          <p className="text-base sm:text-lg text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
-            Connect with like-minded writers, build lasting friendships, and celebrate success together.
-          </p>
+        <p className="text-base sm:text-lg text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
+          You don't need to finish today. You just need to begin. Progress loves patience.
+        </p>
           
           <div className="animate-slide-up" style={{ animationDelay: "0.3s" }}>
             <Link to="/workspace">
