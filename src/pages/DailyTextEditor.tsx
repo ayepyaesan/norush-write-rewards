@@ -226,6 +226,8 @@ const DailyTextEditor = () => {
           title: `Day ${activeDay}`,
           content: currentContent,
           word_count: wordCount
+        }, {
+          onConflict: 'task_id,user_id,day_number'
         })
         .select();
 
