@@ -582,9 +582,6 @@ const TaskEditor = ({ taskId }: TaskEditorProps) => {
                   targetWords={getDailyTarget(activeDay)}
                   title={`Day ${activeDay} Content`}
                 />
-                <div className="text-xs text-muted-foreground mt-2">
-                  💡 Tip: Paste is disabled - you must type all content to ensure authenticity.
-                </div>
               </CardContent>
             </Card>
           </TabsContent>
