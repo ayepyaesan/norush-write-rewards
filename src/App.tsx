@@ -15,6 +15,7 @@ import CombinedDashboard from "./pages/CombinedDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import RichTextEditorPage from "./pages/RichTextEditorPage";
 import NotFound from "./pages/NotFound";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -29,14 +30,46 @@ const App = () => (
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/workspace" element={<Workspace />} />
-          <Route path="/task-creation" element={<TaskCreation />} />
-          <Route path="/payment/:taskId" element={<Payment />} />
-          <Route path="/dashboard" element={<CombinedDashboard />} />
-          <Route path="/user/dashboard" element={<CombinedDashboard />} />
-          <Route path="/task/:taskId" element={<TaskWorkspace />} />
-          <Route path="/refund/:taskId" element={<RefundSummary />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/editor/:taskId?" element={<RichTextEditorPage />} />
+          <Route path="/task-creation" element={
+            <ProtectedRoute requiredRole="user">
+              <TaskCreation />
+            </ProtectedRoute>
+          } />
+          <Route path="/payment/:taskId" element={
+            <ProtectedRoute requiredRole="user">
+              <Payment />
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard" element={
+            <ProtectedRoute requiredRole="user">
+              <CombinedDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/user/dashboard" element={
+            <ProtectedRoute requiredRole="user">
+              <CombinedDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/task/:taskId" element={
+            <ProtectedRoute requiredRole="user">
+              <TaskWorkspace />
+            </ProtectedRoute>
+          } />
+          <Route path="/refund/:taskId" element={
+            <ProtectedRoute requiredRole="user">
+              <RefundSummary />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/dashboard" element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/editor/:taskId?" element={
+            <ProtectedRoute requiredRole="user">
+              <RichTextEditorPage />
+            </ProtectedRoute>
+          } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

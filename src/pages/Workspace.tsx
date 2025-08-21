@@ -3,17 +3,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, User, Shield } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import AdminSeeder from "@/components/AdminSeeder";
 
 const Workspace = () => {
   const [isSignUp, setIsSignUp] = useState(false);
-  const [role, setRole] = useState("user");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -53,7 +51,7 @@ const Workspace = () => {
     
     try {
       if (isSignUp) {
-        // Sign up new user
+        // Sign up new user (always defaults to 'user' role)
         const { data, error } = await supabase.auth.signUp({
           email: email.trim().toLowerCase(),
           password: password,
@@ -61,7 +59,7 @@ const Workspace = () => {
             emailRedirectTo: `${window.location.origin}/`,
             data: {
               full_name: fullName.trim(),
-              role: role
+              role: 'user' // Force all signups to be 'user' role
             }
           }
         });
@@ -90,7 +88,6 @@ const Workspace = () => {
           setFullName("");
           setEmail("");
           setPassword("");
-          setRole("user");
         }
       } else {
         // Sign in existing user
@@ -230,28 +227,6 @@ const Workspace = () => {
 
               <TabsContent value="signup">
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="role">Role</Label>
-                    <Select value={role} onValueChange={setRole}>
-                      <SelectTrigger className="transition-all duration-300 focus:ring-2 focus:ring-primary/50">
-                        <SelectValue placeholder="Select your role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="user">
-                          <div className="flex items-center">
-                            <User className="w-4 h-4 mr-2" />
-                            User
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="admin">
-                          <div className="flex items-center">
-                            <Shield className="w-4 h-4 mr-2" />
-                            Admin
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="fullname">Full Name</Label>
                     <Input

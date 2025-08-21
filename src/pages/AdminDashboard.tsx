@@ -639,28 +639,50 @@ const AdminDashboard = () => {
 
   const handleCreateAdmin = async () => {
     try {
+      // Validation checks
+      if (!newAdminData.fullName.trim() || !newAdminData.email.trim() || !newAdminData.password.trim()) {
+        toast({
+          title: "Validation Error",
+          description: "All fields are required",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check if email already exists (Note: profiles table doesn't have email column)
+      // The auth system will handle duplicate email checking
+
+      // Create admin account
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: newAdminData.email,
+        email: newAdminData.email.trim().toLowerCase(),
         password: newAdminData.password,
         options: {
+          emailRedirectTo: `${window.location.origin}/`,
           data: {
-            full_name: newAdminData.fullName,
-            role: 'admin'
+            full_name: newAdminData.fullName.trim(),
+            role: 'admin' // This will be enforced in the database trigger
           }
         }
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        console.error('Admin creation error:', authError);
+        throw authError;
+      }
+
+      // Log admin creation activity
+      console.log(`Admin account created by ${profile?.full_name} for ${newAdminData.email}`);
 
       toast({
-        title: "Success",
-        description: `Admin account created. Temporary password: ${newAdminData.password}`,
+        title: "✅ Admin Account Created",
+        description: `New admin account created successfully. Email: ${newAdminData.email}`,
       });
 
       setShowAddAdmin(false);
       setNewAdminData({ fullName: "", email: "", password: "" });
       loadUsers();
     } catch (error: any) {
+      console.error('Error creating admin:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to create admin account",
