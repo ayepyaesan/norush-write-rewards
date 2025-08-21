@@ -71,62 +71,34 @@ const RefundMenu = () => {
     try {
       setLoading(true);
       
-      // Step 1: Fetch refund requests
-      const { data: refundRequests, error: refundError } = await supabase
+      // Use a more efficient query with proper JOINs to get all data in one request
+      const { data: refundData, error } = await supabase
         .from('refund_requests')
-        .select('*')
+        .select(`
+          *,
+          profiles!inner(full_name, kpay_name, kpay_phone),
+          tasks!inner(task_name, status, word_count, duration_days),
+          daily_milestones!inner(day_number, target_date, words_written, required_words),
+          task_files(title, word_count)
+        `)
         .order('created_at', { ascending: false });
 
-      if (refundError) {
-        console.error('Refund requests error:', refundError);
-        throw new Error(`Failed to fetch refund requests: ${refundError.message}`);
+      if (error) {
+        console.error('Refund data fetch error:', error);
+        throw new Error(`Failed to fetch refund data: ${error.message}`);
       }
 
-      if (!refundRequests || refundRequests.length === 0) {
+      if (!refundData || refundData.length === 0) {
         setRefunds([]);
         return;
       }
 
-      // Step 2: Get unique user IDs, task IDs, and milestone IDs
-      const userIds = [...new Set(refundRequests.map(r => r.user_id))];
-      const taskIds = [...new Set(refundRequests.map(r => r.task_id))];
-      const milestoneIds = [...new Set(refundRequests.map(r => r.milestone_id))];
-
-      // Step 3: Fetch related data in parallel
-      const [
-        { data: profiles, error: profileError },
-        { data: tasks, error: taskError },
-        { data: milestones, error: milestoneError },
-        { data: taskFiles, error: fileError }
-      ] = await Promise.all([
-        supabase.from('profiles').select('*').in('user_id', userIds),
-        supabase.from('tasks').select('*').in('id', taskIds),
-        supabase.from('daily_milestones').select('*').in('id', milestoneIds),
-        supabase.from('task_files').select('*').in('task_id', taskIds)
-      ]);
-
-      // Check for errors but don't fail completely
-      if (profileError) console.warn('Profile fetch error:', profileError);
-      if (taskError) console.warn('Task fetch error:', taskError);
-      if (milestoneError) console.warn('Milestone fetch error:', milestoneError);
-      if (fileError) console.warn('Task file fetch error:', fileError);
-
-      // Step 4: Create lookup maps for efficient data joining
-      const profileMap = new Map((profiles || []).map(p => [p.user_id, p]));
-      const taskMap = new Map((tasks || []).map(t => [t.id, t]));
-      const milestoneMap = new Map((milestones || []).map(m => [m.id, m]));
-      const fileMap = new Map((taskFiles || []).map(f => [f.task_id, f]));
-
-      // Step 5: Transform data with comprehensive error handling
-      const refundsWithDetails: RefundEntry[] = refundRequests.map(refund => {
-        const profile = profileMap.get(refund.user_id);
-        const task = taskMap.get(refund.task_id);
-        const milestone = milestoneMap.get(refund.milestone_id);
-        const taskFile = fileMap.get(refund.task_id);
-        
-        // Enhanced error handling with detailed fallbacks
-        const taskName = task?.task_name || `Unknown Task (${refund.task_id?.slice(0, 8)}...)`;
-        const userName = profile?.full_name || `Unknown User (${refund.user_id?.slice(0, 8)}...)`;
+      // Transform the joined data into the RefundEntry format
+      const refundsWithDetails: RefundEntry[] = refundData.map(refund => {
+        const profile = refund.profiles;
+        const task = refund.tasks;
+        const milestone = refund.daily_milestones;
+        const taskFile = refund.task_files?.[0]; // Get first task file if exists
         
         // Calculate task status with null safety
         const wordsWritten = milestone?.words_written || taskFile?.word_count || 0;
@@ -143,8 +115,8 @@ const RefundMenu = () => {
           created_at: refund.created_at,
           processed_at: refund.processed_at,
           admin_notes: refund.admin_notes,
-          user_name: userName,
-          task_name: taskName,
+          user_name: profile?.full_name || `Unknown User (${refund.user_id?.slice(0, 8)}...)`,
+          task_name: task?.task_name || `Unknown Task (${refund.task_id?.slice(0, 8)}...)`,
           task_status: taskStatus,
           kpay_name: profile?.kpay_name || null,
           kpay_phone: profile?.kpay_phone || null,
