@@ -444,9 +444,8 @@ const TaskEditor = ({ taskId }: TaskEditorProps) => {
 
         {/* Main Editor Interface */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="daily">Daily Editors</TabsTrigger>
-            <TabsTrigger value="main">Main Editor</TabsTrigger>
             <TabsTrigger value="progress">Progress Track</TabsTrigger>
           </TabsList>
 
@@ -528,31 +527,6 @@ const TaskEditor = ({ taskId }: TaskEditorProps) => {
             </Card>
           </TabsContent>
 
-          {/* Main Editor Tab */}
-          <TabsContent value="main" className="space-y-6">
-            <Card className="gradient-card border-0 shadow-warm">
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <Lock className="w-5 h-5 text-muted-foreground" />
-                  <CardTitle>Main Editor (Read-Only)</CardTitle>
-                </div>
-                <CardDescription>
-                  This automatically syncs all content from your daily writing pages
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Textarea
-                  value={mainEditorContent}
-                  readOnly
-                  className="min-h-[500px] resize-none bg-muted/50"
-                  placeholder="Your daily content will appear here automatically as you write..."
-                />
-                <div className="text-xs text-muted-foreground mt-2">
-                  📝 This content is automatically compiled from all your daily writing pages
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           {/* Progress Track Tab */}
           <TabsContent value="progress" className="space-y-6">
