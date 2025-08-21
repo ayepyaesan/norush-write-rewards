@@ -64,6 +64,11 @@ const App = () => (
           } />
           <Route path="/task/:taskId" element={
             <ProtectedRoute requiredRole="user">
+              <Payment />
+            </ProtectedRoute>
+          } />
+          <Route path="/task-workspace/:taskId" element={
+            <ProtectedRoute requiredRole="user">
               <TaskWorkspace />
             </ProtectedRoute>
           } />

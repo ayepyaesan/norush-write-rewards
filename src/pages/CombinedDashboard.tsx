@@ -40,7 +40,7 @@ const CombinedDashboard = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [writingText, setWritingText] = useState("");
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeTab, setActiveTab] = useState("overview");
   const [showKpayModal, setShowKpayModal] = useState(false);
   const [kpayName, setKpayName] = useState("");
   const [kpayPhone, setKpayPhone] = useState("");
@@ -311,14 +311,14 @@ const CombinedDashboard = () => {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-            <TabsTrigger value="write">Write</TabsTrigger>
-            <TabsTrigger value="history">Task History</TabsTrigger>
-            <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="my-tasks">My Tasks</TabsTrigger>
+            <TabsTrigger value="progress">Progress</TabsTrigger>
+            <TabsTrigger value="payments">Payments</TabsTrigger>
           </TabsList>
 
-          {/* Dashboard Tab */}
-          <TabsContent value="dashboard" className="space-y-6">
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="space-y-6">
             {/* Quick Actions */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <Card className="gradient-card border-0 shadow-warm hover-lift cursor-pointer" onClick={navigateToTaskCreation}>
@@ -354,7 +354,7 @@ const CombinedDashboard = () => {
               </Card>
             </div>
 
-            {/* Recent Tasks */}
+            {/* Recent Tasks Summary */}
             <Card className="gradient-card border-0 shadow-warm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -402,162 +402,180 @@ const CombinedDashboard = () => {
             </Card>
           </TabsContent>
 
-          {/* Write Tab */}
-          <TabsContent value="write" className="space-y-6">
-            {/* Daily Milestone Tracker - Compact Header */}
-            {selectedTask && (
-              <DailyMilestoneCounter
-                taskWordCount={selectedTask.word_count}
-                taskDurationDays={selectedTask.duration_days}
-                taskCreatedAt={selectedTask.created_at}
-                currentWordCount={writingText.trim().split(/\s+/).filter(word => word.length > 0).length}
-                className="max-w-4xl mx-auto"
-              />
-            )}
-            
-            {/* Writing Area - Full Width */}
-            <div className="w-full">
-              <Card className="gradient-card border-0 shadow-warm h-[700px] flex flex-col">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <PenTool className="w-5 h-5" />
-                      {selectedTask ? selectedTask.task_name : "Select a Task to Start Writing"}
-                    </CardTitle>
-                    {selectedTask && (
-                      <CardDescription>
-                        Target: {selectedTask.word_count?.toLocaleString()} words • 
-                        Duration: {selectedTask.duration_days} days • 
-                        Deposit: {selectedTask.deposit_amount?.toLocaleString()} MMK
-                      </CardDescription>
-                    )}
-                  </CardHeader>
-                  <CardContent className="flex-1 flex flex-col">
-                    {selectedTask ? (
-                      <>
-                        {/* Show writing interface only if payment is verified */}
-                        {selectedTask.payments?.[0]?.payment_status === 'verified' ? (
-                          <>
-                            <Textarea
-                              value={writingText}
-                              onChange={(e) => setWritingText(e.target.value)}
-                              placeholder="Start writing your content here..."
-                              className="flex-1 resize-none min-h-[400px] text-base leading-relaxed"
-                            />
-                            <div className="flex items-center justify-between pt-4 border-t">
-                              <div className="text-sm text-muted-foreground">
-                                Words: {writingText.trim().split(/\s+/).filter(word => word.length > 0).length} / {selectedTask.word_count?.toLocaleString()}
-                              </div>
-                              <Button 
-                                onClick={handleSaveText} 
-                                className="gradient-warm hover-lift"
-                                disabled={isSaving}
-                              >
-                                {isSaving ? "Saving..." : "Save Progress"}
-                              </Button>
-                            </div>
-                          </>
-                        ) : (
-                          // Show payment required message
-                          <div className="flex-1 flex items-center justify-center text-center">
-                            <div>
-                              <CreditCard className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                              <h3 className="text-lg font-medium mb-2">Payment Required</h3>
-                              <p className="text-muted-foreground mb-4">
-                                Please complete payment to start writing for this task.
-                              </p>
-                              <Button 
-                                onClick={() => navigate(`/task/${selectedTask.id}`)}
-                                className="gradient-warm hover-lift"
-                              >
-                                Make Payment
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <div className="flex-1 flex items-center justify-center text-center">
-                        <div>
-                          <PenTool className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                          <h3 className="text-lg font-medium mb-2">Ready to Write?</h3>
-                          <p className="text-muted-foreground mb-4">
-                            Select a task from the sidebar or create a new one to get started.
-                          </p>
-                          <Button onClick={navigateToTaskCreation} className="gradient-warm hover-lift">
-                            Create New Task
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-            </div>
-          </TabsContent>
-
-          {/* Task History Tab */}
-          <TabsContent value="history" className="space-y-6">
+          {/* My Tasks Tab */}
+          <TabsContent value="my-tasks" className="space-y-6">
             <Card className="gradient-card border-0 shadow-warm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <History className="w-5 h-5" />
-                  Task History
+                  <FileText className="w-5 h-5" />
+                  My Tasks
                 </CardTitle>
-                <CardDescription>All your writing tasks and their status</CardDescription>
+                <CardDescription>All your writing tasks</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {tasks.map((task) => (
+                    <Card
+                      key={task.id}
+                      className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 border-border bg-card"
+                      onClick={() => navigate(`/task-workspace/${task.id}`)}
+                    >
+                      <CardHeader>
+                        <CardTitle className="text-lg">{task.task_name}</CardTitle>
+                        <CardDescription>
+                          {task.word_count?.toLocaleString()} words in {task.duration_days} days
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Daily Target:</span>
+                            <span className="font-medium">
+                              {Math.ceil(task.word_count / task.duration_days)} words/day
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Status:</span>
+                            <span className={`font-medium ${getTaskStatusColor(task)}`}>
+                              {getTaskStatusText(task)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Deposit:</span>
+                            <span className="font-medium">{task.deposit_amount?.toLocaleString()} MMK</span>
+                          </div>
+                          {task.payments?.[0]?.payment_status === 'verified' && (
+                            <Button 
+                              className="w-full mt-4 gradient-warm hover-lift"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/task-workspace/${task.id}`);
+                              }}
+                            >
+                              Start Writing
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  {tasks.length === 0 && (
+                    <div className="col-span-full text-center py-12">
+                      <FileText className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                      <h3 className="text-lg font-medium mb-2">No Tasks Yet</h3>
+                      <p className="text-muted-foreground mb-4">Create your first writing task to get started</p>
+                      <Button onClick={navigateToTaskCreation} className="gradient-warm hover-lift">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create New Task
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Progress Tab */}
+          <TabsContent value="progress" className="space-y-6">
+            <Card className="gradient-card border-0 shadow-warm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5" />
+                  Writing Progress
+                </CardTitle>
+                <CardDescription>Track your daily writing progress</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {tasks.filter(task => task.payments?.[0]?.payment_status === 'verified').map((task) => (
+                    <div key={task.id} className="p-4 rounded-lg border border-border bg-card">
+                      <h3 className="font-medium mb-3">{task.task_name}</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Total Words:</span>
+                          <p className="font-medium">{task.word_count?.toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Duration:</span>
+                          <p className="font-medium">{task.duration_days} days</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Daily Target:</span>
+                          <p className="font-medium">{Math.ceil(task.word_count / task.duration_days)} words</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Progress:</span>
+                          <p className="font-medium text-primary">0% Complete</p>
+                        </div>
+                      </div>
+                      <div className="mt-4">
+                        <div className="w-full bg-muted rounded-full h-2">
+                          <div className="bg-primary h-2 rounded-full" style={{ width: '0%' }}></div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {tasks.filter(task => task.payments?.[0]?.payment_status === 'verified').length === 0 && (
+                    <div className="text-center py-12">
+                      <TrendingUp className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                      <h3 className="text-lg font-medium mb-2">No Active Tasks</h3>
+                      <p className="text-muted-foreground">Complete payment for your tasks to start tracking progress</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Payments Tab */}
+          <TabsContent value="payments" className="space-y-6">
+            <Card className="gradient-card border-0 shadow-warm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="w-5 h-5" />
+                  Payment History
+                </CardTitle>
+                <CardDescription>Track your payment status and history</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {tasks.map((task) => (
-                    <div
-                      key={task.id}
-                      className="p-4 rounded-lg border border-border bg-card"
-                    >
-                      <div className="flex justify-between items-start mb-2">
+                    <div key={task.id} className="p-4 rounded-lg border border-border bg-card">
+                      <div className="flex justify-between items-start mb-3">
                         <h3 className="font-medium">{task.task_name}</h3>
                         <div className={`text-sm font-medium ${getTaskStatusColor(task)}`}>
                           {getTaskStatusText(task)}
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-muted-foreground">
                         <div>
-                          <span className="font-medium">Words:</span> {task.word_count?.toLocaleString()}
-                        </div>
-                        <div>
-                          <span className="font-medium">Duration:</span> {task.duration_days} days
-                        </div>
-                        <div>
-                          <span className="font-medium">Deposit:</span> {task.deposit_amount?.toLocaleString()} MMK
+                          <span className="font-medium">Amount:</span> {task.deposit_amount?.toLocaleString()} MMK
                         </div>
                         <div>
                           <span className="font-medium">Created:</span> {new Date(task.created_at).toLocaleDateString()}
                         </div>
+                        <div>
+                          <span className="font-medium">Payment Method:</span> {task.payments?.[0]?.payment_method || 'Kpay'}
+                        </div>
                       </div>
-                      <div className="mt-3 flex gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => navigate(`/task/${task.id}`)}
-                        >
-                          View Details
-                        </Button>
-                        {task.payments?.[0]?.payment_status === 'verified' && (
+                      {!task.payments?.[0] && (
+                        <div className="mt-3">
                           <Button 
-                            variant="outline" 
+                            onClick={() => navigate(`/task/${task.id}`)}
+                            className="gradient-warm hover-lift"
                             size="sm"
-                            onClick={() => {
-                              setSelectedTask(task);
-                              setActiveTab("write");
-                            }}
                           >
-                            Start Writing
+                            Make Payment
                           </Button>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                   {tasks.length === 0 && (
-                    <div className="text-center py-8">
-                      <History className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                      <p className="text-muted-foreground mb-4">No task history yet</p>
+                    <div className="text-center py-12">
+                      <CreditCard className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                      <h3 className="text-lg font-medium mb-2">No Payment History</h3>
+                      <p className="text-muted-foreground mb-4">Create a task to see payment information</p>
                       <Button onClick={navigateToTaskCreation} variant="outline">
                         Create Your First Task
                       </Button>
@@ -568,43 +586,6 @@ const CombinedDashboard = () => {
             </Card>
           </TabsContent>
 
-          {/* Profile Tab */}
-          <TabsContent value="profile" className="space-y-6">
-            <Card className="gradient-card border-0 shadow-warm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="w-5 h-5" />
-                  Profile Information
-                </CardTitle>
-                <CardDescription>View and manage your account details</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium text-muted-foreground">Full Name</Label>
-                    <p className="text-foreground">{profile.full_name}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-muted-foreground">Email</Label>
-                    <p className="text-foreground">{user.email}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-muted-foreground">Kpay Name</Label>
-                    <p className="text-foreground">{profile.kpay_name || "Not set"}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-muted-foreground">Kpay Phone</Label>
-                    <p className="text-foreground">{profile.kpay_phone || "Not set"}</p>
-                  </div>
-                </div>
-                <div className="pt-4">
-                  <Button onClick={() => setShowKpayModal(true)} variant="outline">
-                    Update Payment Information
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
       </div>
 
