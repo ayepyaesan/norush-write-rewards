@@ -152,7 +152,10 @@ const AdminDashboard = () => {
     newUsersToday: 0,
     totalProfit: 0,
     avgTaskCompletion: 0,
-    topPerformers: 0
+    topPerformers: 0,
+    lastSynced: null as string | null,
+    error: false,
+    lastSyncError: null as string | null
   });
   
   const { toast } = useToast();
@@ -265,71 +268,124 @@ const AdminDashboard = () => {
     try {
       console.log('Loading real-time stats from Supabase...');
       const today = new Date().toISOString().split('T')[0];
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowStr = tomorrow.toISOString().split('T')[0];
       
-      // Get comprehensive statistics with proper error handling
+      // Get comprehensive statistics with proper error handling and debug logging
       const queries = await Promise.allSettled([
+        // Query 0: Total users (all profiles with role 'user')
         supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'user'),
+        // Query 1: Active users (users with access granted)
         supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'user').eq('has_access', true),
+        // Query 2: All tasks
         supabase.from('tasks').select('*', { count: 'exact', head: true }),
+        // Query 3: Active tasks
         supabase.from('tasks').select('*', { count: 'exact', head: true }).eq('status', 'active'),
+        // Query 4: Completed tasks
         supabase.from('tasks').select('*', { count: 'exact', head: true }).eq('status', 'completed'),
+        // Query 5: Overdue tasks
         supabase.from('tasks').select('*', { count: 'exact', head: true }).eq('status', 'overdue'),
+        // Query 6: All payments
         supabase.from('payments').select('*', { count: 'exact', head: true }),
+        // Query 7: Pending payments
         supabase.from('payments').select('*', { count: 'exact', head: true }).eq('payment_status', 'pending'),
+        // Query 8: Verified payments
         supabase.from('payments').select('*', { count: 'exact', head: true }).eq('payment_status', 'verified'),
+        // Query 9: Rejected payments
         supabase.from('payments').select('*', { count: 'exact', head: true }).eq('payment_status', 'rejected'),
-        supabase.from('tasks').select('*', { count: 'exact', head: true }).gte('created_at', today),
-        supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', today).eq('role', 'user'),
-        supabase.from('payments').select('amount').eq('payment_status', 'verified')
+        // Query 10: Tasks created today
+        supabase.from('tasks').select('*', { count: 'exact', head: true }).gte('created_at', today).lt('created_at', tomorrowStr),
+        // Query 11: New users today
+        supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', today).lt('created_at', tomorrowStr).eq('role', 'user'),
+        // Query 12: Verified payment amounts for revenue calculation
+        supabase.from('payments').select('amount').eq('payment_status', 'verified'),
+        // Query 13: Refunds today (from refunds table)
+        supabase.from('refunds').select('*', { count: 'exact', head: true }).gte('created_at', today).lt('created_at', tomorrowStr),
+        // Query 14: All refunds for total calculation
+        supabase.from('refunds').select('refund_amount_mmk')
       ]);
 
-      // Extract counts safely
-      const totalUsersCount = queries[0].status === 'fulfilled' ? queries[0].value.count : 0;
-      const activeUsersCount = queries[1].status === 'fulfilled' ? queries[1].value.count : 0;
-      const totalTasksCount = queries[2].status === 'fulfilled' ? queries[2].value.count : 0;
-      const activeTasksCount = queries[3].status === 'fulfilled' ? queries[3].value.count : 0;
-      const completedTasksCount = queries[4].status === 'fulfilled' ? queries[4].value.count : 0;
-      const overdueTasksCount = queries[5].status === 'fulfilled' ? queries[5].value.count : 0;
-      const totalPaymentsCount = queries[6].status === 'fulfilled' ? queries[6].value.count : 0;
-      const pendingPaymentsCount = queries[7].status === 'fulfilled' ? queries[7].value.count : 0;
-      const verifiedPaymentsCount = queries[8].status === 'fulfilled' ? queries[8].value.count : 0;
-      const rejectedPaymentsCount = queries[9].status === 'fulfilled' ? queries[9].value.count : 0;
-      const tasksTodayCount = queries[10].status === 'fulfilled' ? queries[10].value.count : 0;
-      const newUsersTodayCount = queries[11].status === 'fulfilled' ? queries[11].value.count : 0;
-      const revenueData = queries[12].status === 'fulfilled' ? queries[12].value.data : [];
+      // Debug logging for each query result
+      queries.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          console.log(`Query ${index} successful:`, result.value.count ?? result.value.data?.length ?? 'No count');
+        } else {
+          console.error(`Query ${index} failed:`, result.reason);
+        }
+      });
 
-      const totalRevenue = revenueData?.reduce((sum, payment) => sum + payment.amount, 0) || 0;
-      const avgCompletion = totalTasksCount ? Math.round((completedTasksCount / totalTasksCount) * 100) : 0;
+      // Extract counts safely with proper error checking
+      const totalUsersCount = queries[0].status === 'fulfilled' ? (queries[0].value.count ?? 0) : 0;
+      const activeUsersCount = queries[1].status === 'fulfilled' ? (queries[1].value.count ?? 0) : 0;
+      const totalTasksCount = queries[2].status === 'fulfilled' ? (queries[2].value.count ?? 0) : 0;
+      const activeTasksCount = queries[3].status === 'fulfilled' ? (queries[3].value.count ?? 0) : 0;
+      const completedTasksCount = queries[4].status === 'fulfilled' ? (queries[4].value.count ?? 0) : 0;
+      const overdueTasksCount = queries[5].status === 'fulfilled' ? (queries[5].value.count ?? 0) : 0;
+      const totalPaymentsCount = queries[6].status === 'fulfilled' ? (queries[6].value.count ?? 0) : 0;
+      const pendingPaymentsCount = queries[7].status === 'fulfilled' ? (queries[7].value.count ?? 0) : 0;
+      const verifiedPaymentsCount = queries[8].status === 'fulfilled' ? (queries[8].value.count ?? 0) : 0;
+      const rejectedPaymentsCount = queries[9].status === 'fulfilled' ? (queries[9].value.count ?? 0) : 0;
+      const tasksTodayCount = queries[10].status === 'fulfilled' ? (queries[10].value.count ?? 0) : 0;
+      const newUsersTodayCount = queries[11].status === 'fulfilled' ? (queries[11].value.count ?? 0) : 0;
+      const revenueData = queries[12].status === 'fulfilled' ? (queries[12].value.data ?? []) : [];
+      const refundsTodayCount = queries[13].status === 'fulfilled' ? (queries[13].value.count ?? 0) : 0;
+      const refundsData = queries[14].status === 'fulfilled' ? (queries[14].value.data ?? []) : [];
+
+      // Calculate totals
+      const totalRevenue = revenueData.reduce((sum, payment) => sum + (payment.amount || 0), 0);
+      const totalRefunds = refundsData.reduce((sum, refund) => sum + (refund.refund_amount_mmk || 0), 0);
+      const netProfit = totalRevenue - totalRefunds;
+      const avgCompletion = totalTasksCount > 0 ? Math.round((completedTasksCount / totalTasksCount) * 100) : 0;
 
       const newStats = {
-        totalUsers: totalUsersCount || 0,
-        activeUsers: activeUsersCount || 0,
-        totalTasks: totalTasksCount || 0,
-        activeTasks: activeTasksCount || 0,
-        completedTasks: completedTasksCount || 0,
-        overdueTasks: overdueTasksCount || 0,
-        totalPayments: totalPaymentsCount || 0,
-        totalRevenue,
-        pendingPayments: pendingPaymentsCount || 0,
-        verifiedPayments: verifiedPaymentsCount || 0,
-        rejectedPayments: rejectedPaymentsCount || 0,
-        tasksToday: tasksTodayCount || 0,
-        refundsToday: 0,
-        newUsersToday: newUsersTodayCount || 0,
-        totalProfit: Math.round(totalRevenue * 0.85), // Assuming 15% overhead
+        totalUsers: totalUsersCount,
+        activeUsers: activeUsersCount,
+        totalTasks: totalTasksCount,
+        activeTasks: activeTasksCount,
+        completedTasks: completedTasksCount,
+        overdueTasks: overdueTasksCount,
+        totalPayments: totalPaymentsCount,
+        totalRevenue: totalRevenue,
+        pendingPayments: pendingPaymentsCount,
+        verifiedPayments: verifiedPaymentsCount,
+        rejectedPayments: rejectedPaymentsCount,
+        tasksToday: tasksTodayCount,
+        refundsToday: refundsTodayCount,
+        newUsersToday: newUsersTodayCount,
+        totalProfit: netProfit,
         avgTaskCompletion: avgCompletion,
-        topPerformers: Math.min(5, activeUsersCount || 0)
+        topPerformers: Math.min(5, activeUsersCount),
+        lastSynced: new Date().toISOString(),
+        error: false,
+        lastSyncError: null
       };
 
-      console.log('Real-time stats loaded:', newStats);
+      // Enhanced debug logging
+      console.log('🔄 Real-time stats loaded successfully:', newStats);
+      console.log('📊 Database sync verification:', {
+        usersQuery: `profiles table with role='user': ${totalUsersCount}`,
+        tasksQuery: `tasks table total: ${totalTasksCount}`,
+        paymentsQuery: `payments table total: ${totalPaymentsCount}`,
+        revenueQuery: `verified payments sum: ${totalRevenue} MMK`,
+        timestamp: new Date().toISOString()
+      });
+      
       setStats(newStats);
     } catch (error) {
-      console.error('Error loading real-time stats:', error);
+      console.error('❌ Error loading real-time stats:', error);
       toast({
-        title: "Stats Error",
-        description: "Failed to load real-time statistics",
+        title: "⚠️ Data Fetch Error",
+        description: "Failed to load real-time statistics from database",
         variant: "destructive",
       });
+      
+      // Set error state to show data fetch problems
+      setStats(prev => ({
+        ...prev,
+        error: true,
+        lastSyncError: new Date().toISOString()
+      }));
     }
   };
 
@@ -618,12 +674,129 @@ const AdminDashboard = () => {
     navigate("/");
   };
 
-  const exportData = (type: string) => {
-    // Implementation for exporting data (CSV, Excel, PDF)
-    toast({
-      title: "Export Started",
-      description: `${type} export will be available shortly`,
-    });
+  const exportData = async (type: string, period: string = 'monthly') => {
+    try {
+      setRefreshing(true);
+      
+      // Calculate date range based on period
+      const now = new Date();
+      let startDate = new Date();
+      
+      switch (period) {
+        case 'daily':
+          startDate.setDate(now.getDate() - 1);
+          break;
+        case 'weekly':
+          startDate.setDate(now.getDate() - 7);
+          break;
+        case 'monthly':
+          startDate.setMonth(now.getMonth() - 1);
+          break;
+        case 'yearly':
+          startDate.setFullYear(now.getFullYear() - 1);
+          break;
+        default:
+          startDate.setMonth(now.getMonth() - 1);
+      }
+      
+      const startDateStr = startDate.toISOString().split('T')[0];
+      const endDateStr = now.toISOString().split('T')[0];
+      
+      // Fetch comprehensive data for the period
+      const [usersData, tasksData, paymentsData, refundsData] = await Promise.all([
+        supabase.from('profiles').select('*').gte('created_at', startDateStr).eq('role', 'user'),
+        supabase.from('tasks').select('*').gte('created_at', startDateStr),
+        supabase.from('payments').select('*').gte('created_at', startDateStr),
+        supabase.from('refunds').select('*').gte('created_at', startDateStr)
+      ]);
+      
+      // Calculate report metrics
+      const totalUsers = usersData.data?.length || 0;
+      const totalTasks = tasksData.data?.length || 0;
+      const completedTasks = tasksData.data?.filter(t => t.status === 'completed').length || 0;
+      const totalRevenue = paymentsData.data?.filter(p => p.payment_status === 'verified')
+        .reduce((sum, p) => sum + p.amount, 0) || 0;
+      const totalRefunds = refundsData.data?.reduce((sum, r) => sum + r.refund_amount_mmk, 0) || 0;
+      const netProfit = totalRevenue - totalRefunds;
+      
+      // Create report data
+      const reportData = {
+        period: period.charAt(0).toUpperCase() + period.slice(1),
+        dateRange: `${startDate.toLocaleDateString()} - ${now.toLocaleDateString()}`,
+        metrics: {
+          totalUsers,
+          totalTasks,
+          completedTasks,
+          taskCompletionRate: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
+          totalRevenue,
+          totalRefunds,
+          netProfit,
+          profitMargin: totalRevenue > 0 ? Math.round((netProfit / totalRevenue) * 100) : 0
+        },
+        details: {
+          users: usersData.data || [],
+          tasks: tasksData.data || [],
+          payments: paymentsData.data || [],
+          refunds: refundsData.data || []
+        }
+      };
+      
+      if (type === 'CSV') {
+        exportToCSV(reportData);
+      } else if (type === 'JSON') {
+        exportToJSON(reportData);
+      }
+      
+      toast({
+        title: "Export Completed",
+        description: `${period} ${type} report has been downloaded`,
+      });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        title: "Export Failed",
+        description: "Failed to generate report",
+        variant: "destructive",
+      });
+    } finally {
+      setRefreshing(false);
+    }
+  };
+  
+  const exportToCSV = (data: any) => {
+    const metrics = data.metrics;
+    const csvContent = [
+      ['NoRush Admin Report', data.period],
+      ['Date Range', data.dateRange],
+      [''],
+      ['Metrics', 'Value'],
+      ['Total Users', metrics.totalUsers],
+      ['Total Tasks', metrics.totalTasks],
+      ['Completed Tasks', metrics.completedTasks],
+      ['Task Completion Rate', `${metrics.taskCompletionRate}%`],
+      ['Total Revenue (MMK)', metrics.totalRevenue.toLocaleString()],
+      ['Total Refunds (MMK)', metrics.totalRefunds.toLocaleString()],
+      ['Net Profit (MMK)', metrics.netProfit.toLocaleString()],
+      ['Profit Margin', `${metrics.profitMargin}%`]
+    ].map(row => row.join(',')).join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `norush-report-${data.period.toLowerCase()}-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+  
+  const exportToJSON = (data: any) => {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `norush-report-${data.period.toLowerCase()}-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const generateTempPassword = () => {
@@ -793,35 +966,39 @@ const AdminDashboard = () => {
               {[
                 { 
                   title: "Total Users", 
-                  value: stats.totalUsers, 
-                  change: `+${stats.newUsersToday} today`, 
+                  value: stats.error ? "⚠️ Error" : stats.totalUsers, 
+                  change: stats.error ? "Data fetch failed" : `+${stats.newUsersToday} today`, 
                   icon: Users, 
-                  color: "sky",
-                  realTime: true
+                  color: stats.error ? "red" : "sky",
+                  realTime: true,
+                  lastSync: stats.lastSynced
                 },
                 { 
                   title: "Active Tasks", 
-                  value: stats.activeTasks, 
-                  change: `${stats.avgTaskCompletion}% completion`, 
+                  value: stats.error ? "⚠️ Error" : stats.activeTasks, 
+                  change: stats.error ? "Data fetch failed" : `${stats.avgTaskCompletion}% completion`, 
                   icon: Target, 
-                  color: "mint",
-                  realTime: true
+                  color: stats.error ? "red" : "mint",
+                  realTime: true,
+                  lastSync: stats.lastSynced
                 },
                 { 
                   title: "Total Revenue", 
-                  value: `${stats.totalRevenue.toLocaleString()} MMK`, 
-                  change: `${stats.totalProfit.toLocaleString()} MMK profit`, 
+                  value: stats.error ? "⚠️ Error" : `${stats.totalRevenue.toLocaleString()} MMK`, 
+                  change: stats.error ? "Data fetch failed" : `${stats.totalProfit.toLocaleString()} MMK profit`, 
                   icon: DollarSign, 
-                  color: "green",
-                  realTime: true
+                  color: stats.error ? "red" : "green",
+                  realTime: true,
+                  lastSync: stats.lastSynced
                 },
                 { 
                   title: "Pending Payments", 
-                  value: stats.pendingPayments, 
-                  change: "Needs review", 
+                  value: stats.error ? "⚠️ Error" : stats.pendingPayments, 
+                  change: stats.error ? "Data fetch failed" : "Needs review", 
                   icon: AlertTriangle, 
-                  color: "yellow",
-                  realTime: true
+                  color: stats.error ? "red" : "yellow",
+                  realTime: true,
+                  lastSync: stats.lastSynced
                 }
               ].map((stat, index) => (
                 <Card key={index} className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'} shadow-lg hover:shadow-xl transition-shadow relative`}>
@@ -831,11 +1008,21 @@ const AdminDashboard = () => {
                         <div className="flex items-center gap-2">
                           <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{stat.title}</p>
                           {stat.realTime && (
-                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                            <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${stats.error ? 'bg-red-500' : 'bg-green-500'}`}></div>
                           )}
                         </div>
                         <p className="text-2xl font-bold">{stat.value}</p>
                         <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'} mt-1`}>{stat.change}</p>
+                        {stat.lastSync && !stats.error && (
+                          <p className={`text-xs ${darkMode ? 'text-gray-600' : 'text-gray-400'} mt-1`}>
+                            Last synced: {new Date(stat.lastSync).toLocaleTimeString()}
+                          </p>
+                        )}
+                        {stats.error && (
+                          <p className="text-xs text-red-500 mt-1">
+                            Database connection error
+                          </p>
+                        )}
                       </div>
                       <stat.icon className={`w-8 h-8 text-${stat.color}-500`} />
                     </div>
@@ -1439,28 +1626,77 @@ const AdminDashboard = () => {
                 </p>
               </div>
               <div className="flex gap-2">
-                {['Daily', 'Weekly', 'Monthly', 'Yearly'].map(period => (
-                  <Button key={period} onClick={() => exportData(`${period} Report`)} variant="outline">
-                    <Download className="w-4 h-4 mr-2" />
-                    {period}
-                  </Button>
+                {['daily', 'weekly', 'monthly', 'yearly'].map(period => (
+                  <div key={period} className="flex gap-1">
+                    <Button onClick={() => exportData('CSV', period)} variant="outline" size="sm">
+                      <Download className="w-4 h-4 mr-1" />
+                      {period.charAt(0).toUpperCase() + period.slice(1)} CSV
+                    </Button>
+                    <Button onClick={() => exportData('JSON', period)} variant="outline" size="sm">
+                      <Download className="w-4 h-4 mr-1" />
+                      JSON
+                    </Button>
+                  </div>
                 ))}
               </div>
             </div>
             
+            {/* Real-Time Statistics Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              {[
+                { title: "Total Users", value: stats.error ? "⚠️ Error" : stats.totalUsers, icon: Users, color: stats.error ? "red" : "blue" },
+                { title: "Active Tasks", value: stats.error ? "⚠️ Error" : stats.activeTasks, icon: Activity, color: stats.error ? "red" : "green" },
+                { title: "Completed Tasks", value: stats.error ? "⚠️ Error" : stats.completedTasks, icon: CheckCircle, color: stats.error ? "red" : "emerald" },
+                { title: "Total Payments", value: stats.error ? "⚠️ Error" : stats.totalPayments, icon: CreditCard, color: stats.error ? "red" : "purple" },
+                { title: "Pending Deposits", value: stats.error ? "⚠️ Error" : stats.pendingPayments, icon: Clock, color: stats.error ? "red" : "yellow" },
+                { title: "Refunds Issued", value: stats.error ? "⚠️ Error" : stats.refundsToday, icon: ArrowDownLeft, color: stats.error ? "red" : "orange" },
+                { title: "Tasks Today", value: stats.error ? "⚠️ Error" : stats.tasksToday, icon: Calendar, color: stats.error ? "red" : "indigo" },
+                { title: "New Users Today", value: stats.error ? "⚠️ Error" : stats.newUsersToday, icon: UserCheck, color: stats.error ? "red" : "cyan" }
+              ].map((stat, index) => (
+                <Card key={index} className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'} shadow-md hover:shadow-lg transition-shadow`}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-1`}>{stat.title}</p>
+                        <p className="text-lg font-bold">{stat.value}</p>
+                        {stats.lastSynced && !stats.error && (
+                          <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                            {new Date(stats.lastSynced).toLocaleTimeString()}
+                          </p>
+                        )}
+                      </div>
+                      <stat.icon className={`w-6 h-6 text-${stat.color}-500`} />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
             {/* Financial Overview */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'} shadow-lg`}>
                 <CardHeader>
                   <CardTitle>Revenue Analytics</CardTitle>
-                  <CardDescription>Financial performance over time</CardDescription>
+                  <CardDescription>Financial performance and profit calculation</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-64 flex items-center justify-center bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <div className="text-center">
-                      <BarChart3 className="w-12 h-12 mx-auto text-gray-400 mb-2" />
-                      <p className="text-gray-600 dark:text-gray-400">Revenue Chart</p>
-                      <p className="text-2xl font-bold text-green-600">{stats.totalRevenue.toLocaleString()} MMK</p>
+                  <div className="space-y-4">
+                    <div className="text-center p-6 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg">
+                      <DollarSign className="w-12 h-12 mx-auto text-green-600 mb-2" />
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Total Revenue</p>
+                      <p className="text-3xl font-bold text-green-600">{stats.error ? "Error" : `${stats.totalRevenue.toLocaleString()} MMK`}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Net Profit</p>
+                        <p className="text-xl font-bold text-blue-600">{stats.error ? "Error" : `${stats.totalProfit.toLocaleString()} MMK`}</p>
+                      </div>
+                      <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Profit Margin</p>
+                        <p className="text-xl font-bold text-purple-600">
+                          {stats.error ? "Error" : `${stats.totalRevenue > 0 ? Math.round((stats.totalProfit / stats.totalRevenue) * 100) : 0}%`}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -1468,23 +1704,22 @@ const AdminDashboard = () => {
 
               <Card className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'} shadow-lg`}>
                 <CardHeader>
-                  <CardTitle>Key Metrics</CardTitle>
-                  <CardDescription>Important business indicators</CardDescription>
+                  <CardTitle>Key Performance Indicators</CardTitle>
+                  <CardDescription>Real-time business metrics</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {[
-                    { label: "Total Revenue", value: `${stats.totalRevenue.toLocaleString()} MMK`, change: "+12%" },
-                    { label: "Total Profit", value: `${stats.totalProfit.toLocaleString()} MMK`, change: "+8%" },
-                    { label: "Active Users", value: stats.activeUsers, change: "+5%" },
-                    { label: "Task Completion Rate", value: `${stats.avgTaskCompletion}%`, change: "+3%" },
-                    { label: "Payment Success Rate", value: `${Math.round((stats.verifiedPayments / stats.totalPayments) * 100 || 0)}%`, change: "+2%" }
+                    { label: "Active Users", value: stats.error ? "Error" : stats.activeUsers, icon: UserCheck, color: "green" },
+                    { label: "Task Completion Rate", value: stats.error ? "Error" : `${stats.avgTaskCompletion}%`, icon: Target, color: "blue" },
+                    { label: "Payment Success Rate", value: stats.error ? "Error" : `${Math.round((stats.verifiedPayments / (stats.totalPayments || 1)) * 100)}%`, icon: CheckCircle, color: "emerald" },
+                    { label: "Daily Revenue", value: stats.error ? "Error" : `${Math.round(stats.totalRevenue / 30).toLocaleString()} MMK`, icon: TrendingUp, color: "purple" }
                   ].map((metric, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{metric.label}</span>
-                      <div className="text-right">
-                        <span className="font-semibold">{metric.value}</span>
-                        <span className="text-green-600 text-sm ml-2">{metric.change}</span>
+                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <metric.icon className={`w-5 h-5 text-${metric.color}-500`} />
+                        <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{metric.label}</span>
                       </div>
+                      <span className="font-semibold">{metric.value}</span>
                     </div>
                   ))}
                 </CardContent>
