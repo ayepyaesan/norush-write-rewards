@@ -53,6 +53,43 @@ const CombinedDashboard = () => {
     checkUser();
   }, []);
 
+  // Set up real-time subscription for payment updates
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel('payment-status-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'payments',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Payment update received:', payload);
+          
+          // If payment status changed to verified, show toast and refresh tasks
+          if (payload.new.payment_status === 'verified' && payload.old.payment_status !== 'verified') {
+            toast({
+              title: "Payment Approved! 🎉",
+              description: "Your payment has been verified. You can now start writing!",
+              duration: 5000,
+            });
+            
+            // Refresh tasks to update UI
+            fetchTasks(user.id);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, toast]);
+
   const checkUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     
