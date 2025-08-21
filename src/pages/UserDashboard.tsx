@@ -23,6 +23,7 @@ interface UserProfile {
   role: string;
   kpay_name: string | null;
   kpay_phone: string | null;
+  total_refund_earned: number;
 }
 
 interface Task {
@@ -89,12 +90,12 @@ const UserDashboard = () => {
     checkUser();
   }, []);
 
-  // Set up real-time subscription for payment updates
+  // Set up real-time subscriptions for payment and profile updates
   useEffect(() => {
     if (!user?.id) return;
 
     const channel = supabase
-      .channel('payment-status-changes')
+      .channel('user-dashboard-updates')
       .on(
         'postgres_changes',
         {
@@ -117,6 +118,41 @@ const UserDashboard = () => {
             // Refresh tasks to update UI
             fetchTasks(user.id);
           }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Profile update received:', payload);
+          
+          // Update profile state with new total_refund_earned
+          if (payload.new.total_refund_earned !== payload.old.total_refund_earned) {
+            setProfile(prev => prev ? { ...prev, total_refund_earned: payload.new.total_refund_earned } : null);
+            toast({
+              title: "Refund Received! 💰",
+              description: `Your refund has been processed. Total earned: ${payload.new.total_refund_earned.toLocaleString()} MMK`,
+              duration: 5000,
+            });
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'refund_requests',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          // Refresh tasks when refund requests change
+          fetchTasks(user.id);
         }
       )
       .subscribe();
@@ -254,10 +290,28 @@ const UserDashboard = () => {
             <h1 className="text-3xl font-bold text-foreground">Welcome back, {profile.full_name}!</h1>
             <p className="text-muted-foreground">Manage your writing tasks with deposit commitment system</p>
           </div>
-          <Button onClick={handleSignOut} variant="outline" className="flex items-center gap-2">
-            <LogOut className="w-4 h-4" />
-            Sign Out
-          </Button>
+          <div className="flex items-center gap-4">
+            {/* Total Refund Earned Card */}
+            <Card className="gradient-card border-0 shadow-warm">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-success/10 rounded-lg">
+                    <DollarSign className="w-5 h-5 text-success" />
+                  </div>
+                  <div>
+                    <div className="text-sm text-muted-foreground">Total Refund Earned</div>
+                    <div className="text-xl font-bold text-success">
+                      {(profile.total_refund_earned || 0).toLocaleString()} MMK
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Button onClick={handleSignOut} variant="outline" className="flex items-center gap-2">
+              <LogOut className="w-4 h-4" />
+              Sign Out
+            </Button>
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -519,21 +573,18 @@ const UserDashboard = () => {
                 </CardContent>
               </Card>
 
-              <Card className="gradient-card border-0 shadow-warm">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Refunds Earned</CardTitle>
-                  <DollarSign className="h-4 w-4 text-success" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {tasks.reduce((total, task) => 
-                      total + (task.daily_milestones?.reduce((sum, milestone) => 
-                        sum + (milestone.refund_status === 'approved' ? milestone.refund_amount : 0), 0) || 0), 0
-                    ).toLocaleString()} MMK
-                  </div>
-                  <p className="text-xs text-muted-foreground">Successfully earned back</p>
-                </CardContent>
-              </Card>
+               <Card className="gradient-card border-0 shadow-warm">
+                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                   <CardTitle className="text-sm font-medium">Total Refunds Earned</CardTitle>
+                   <DollarSign className="h-4 w-4 text-success" />
+                 </CardHeader>
+                 <CardContent>
+                   <div className="text-2xl font-bold">
+                     {(profile.total_refund_earned || 0).toLocaleString()} MMK
+                   </div>
+                   <p className="text-xs text-muted-foreground">Successfully earned back</p>
+                 </CardContent>
+               </Card>
 
             </div>
 
