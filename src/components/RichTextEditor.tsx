@@ -17,6 +17,7 @@ import {
   Type
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useState, useEffect } from "react";
 
 interface RichTextEditorProps {
   content: string;
@@ -66,6 +67,33 @@ export const RichTextEditor = ({
     },
   });
 
+  // 24-hour countdown timer state
+  const [timeRemaining, setTimeRemaining] = useState<number>(86400); // 24 hours in seconds
+
+  // Countdown timer effect
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeRemaining((prev) => {
+        if (prev <= 1) {
+          // Reset to 24 hours when timer reaches 0
+          return 86400;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // Initialize timer based on current day start
+  useEffect(() => {
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+    const secondsRemaining = Math.floor((endOfDay.getTime() - now.getTime()) / 1000);
+    setTimeRemaining(Math.max(0, secondsRemaining));
+  }, []);
+
   const toggleBold = () => editor?.chain().focus().toggleBold().run();
   const toggleItalic = () => editor?.chain().focus().toggleItalic().run();
   const toggleStrike = () => editor?.chain().focus().toggleStrike().run();
@@ -107,6 +135,74 @@ export const RichTextEditor = ({
       <CardContent className="p-0">
         {/* Toolbar */}
         <div className="border-b bg-muted/30 p-3">
+          {/* Countdown Timer and Progress */}
+          <div className="mb-3 p-3 bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg border border-primary/20">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              {/* Countdown Timer */}
+              <div className="flex items-center gap-3">
+                <div className="text-center">
+                  <div className="text-2xl font-mono font-bold text-primary">
+                    {Math.floor(timeRemaining / 3600).toString().padStart(2, '0')}:
+                    {Math.floor((timeRemaining % 3600) / 60).toString().padStart(2, '0')}:
+                    {(timeRemaining % 60).toString().padStart(2, '0')}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Time Remaining</div>
+                </div>
+                <div className="h-8 w-px bg-border"></div>
+                <div className="text-center">
+                  <div className="text-lg font-semibold text-foreground">
+                    {wordCount} / {targetWords > 0 ? targetWords : 'N/A'}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Words Today</div>
+                </div>
+              </div>
+
+              {/* Refund Status */}
+              <div className="text-right">
+                <div className={`text-sm font-medium ${
+                  wordCount >= (targetWords || 0) && timeRemaining > 0 
+                    ? 'text-green-600' 
+                    : timeRemaining <= 0 
+                    ? 'text-red-500' 
+                    : 'text-yellow-600'
+                }`}>
+                  {wordCount >= (targetWords || 0) && timeRemaining > 0 
+                    ? '✅ Refund Eligible' 
+                    : timeRemaining <= 0 
+                    ? '❌ Deadline Missed' 
+                    : `⏳ ${targetWords > 0 ? Math.max(0, targetWords - wordCount) : 0} words needed`
+                  }
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {timeRemaining > 0 
+                    ? `Deadline: ${new Date(Date.now() + timeRemaining * 1000).toLocaleTimeString()}`
+                    : 'Next goal tomorrow'
+                  }
+                </div>
+              </div>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="mt-3">
+              <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                <span>Daily Progress</span>
+                <span>{Math.round((wordCount / (targetWords || 1)) * 100)}%</span>
+              </div>
+              <div className="w-full bg-secondary/50 rounded-full h-2">
+                <div 
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    wordCount >= (targetWords || 0) 
+                      ? 'bg-gradient-to-r from-green-500 to-green-400' 
+                      : 'bg-gradient-to-r from-primary to-accent'
+                  }`}
+                  style={{ 
+                    width: `${Math.min(100, (wordCount / (targetWords || 1)) * 100)}%` 
+                  }}
+                ></div>
+              </div>
+            </div>
+          </div>
+
           <div className="flex items-center gap-2 flex-wrap">
             {/* Formatting buttons */}
             <div className="flex items-center gap-1">
