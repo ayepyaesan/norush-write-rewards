@@ -70,35 +70,15 @@ const RefundMenu = () => {
     try {
       setLoading(true);
       
-      // Optimized single query with JOINs for better performance
-      const { data: refundRequests, error } = await supabase
+      // Step 1: Fetch refund requests
+      const { data: refundRequests, error: refundError } = await supabase
         .from('refund_requests')
-        .select(`
-          *,
-          profiles!refund_requests_user_id_fkey (
-            user_id,
-            full_name,
-            kpay_name,
-            kpay_phone
-          ),
-          tasks!refund_requests_task_id_fkey (
-            id,
-            task_name,
-            status
-          ),
-          daily_milestones!refund_requests_milestone_id_fkey (
-            id,
-            day_number,
-            target_date,
-            words_written,
-            required_words
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Database error:', error);
-        throw new Error(`Failed to fetch refund data: ${error.message}`);
+      if (refundError) {
+        console.error('Refund requests error:', refundError);
+        throw new Error(`Failed to fetch refund requests: ${refundError.message}`);
       }
 
       if (!refundRequests || refundRequests.length === 0) {
@@ -106,18 +86,49 @@ const RefundMenu = () => {
         return;
       }
 
-      // Transform data with improved error handling
+      // Step 2: Get unique user IDs, task IDs, and milestone IDs
+      const userIds = [...new Set(refundRequests.map(r => r.user_id))];
+      const taskIds = [...new Set(refundRequests.map(r => r.task_id))];
+      const milestoneIds = [...new Set(refundRequests.map(r => r.milestone_id))];
+
+      // Step 3: Fetch related data in parallel
+      const [
+        { data: profiles, error: profileError },
+        { data: tasks, error: taskError },
+        { data: milestones, error: milestoneError },
+        { data: taskFiles, error: fileError }
+      ] = await Promise.all([
+        supabase.from('profiles').select('*').in('user_id', userIds),
+        supabase.from('tasks').select('*').in('id', taskIds),
+        supabase.from('daily_milestones').select('*').in('id', milestoneIds),
+        supabase.from('task_files').select('*').in('task_id', taskIds)
+      ]);
+
+      // Check for errors but don't fail completely
+      if (profileError) console.warn('Profile fetch error:', profileError);
+      if (taskError) console.warn('Task fetch error:', taskError);
+      if (milestoneError) console.warn('Milestone fetch error:', milestoneError);
+      if (fileError) console.warn('Task file fetch error:', fileError);
+
+      // Step 4: Create lookup maps for efficient data joining
+      const profileMap = new Map((profiles || []).map(p => [p.user_id, p]));
+      const taskMap = new Map((tasks || []).map(t => [t.id, t]));
+      const milestoneMap = new Map((milestones || []).map(m => [m.id, m]));
+      const fileMap = new Map((taskFiles || []).map(f => [f.task_id, f]));
+
+      // Step 5: Transform data with comprehensive error handling
       const refundsWithDetails: RefundEntry[] = refundRequests.map(refund => {
-        const profile = Array.isArray(refund.profiles) ? refund.profiles[0] : refund.profiles;
-        const task = Array.isArray(refund.tasks) ? refund.tasks[0] : refund.tasks;
-        const milestone = Array.isArray(refund.daily_milestones) ? refund.daily_milestones[0] : refund.daily_milestones;
+        const profile = profileMap.get(refund.user_id);
+        const task = taskMap.get(refund.task_id);
+        const milestone = milestoneMap.get(refund.milestone_id);
+        const taskFile = fileMap.get(refund.task_id);
         
         // Enhanced error handling with detailed fallbacks
-        const taskName = task?.task_name || `Task ID: ${refund.task_id?.slice(0, 8)}...` || 'Unknown Task';
-        const userName = profile?.full_name || `User ID: ${refund.user_id?.slice(0, 8)}...` || 'Unknown User';
+        const taskName = task?.task_name || `Unknown Task (${refund.task_id?.slice(0, 8)}...)`;
+        const userName = profile?.full_name || `Unknown User (${refund.user_id?.slice(0, 8)}...)`;
         
         // Calculate task status with null safety
-        const wordsWritten = milestone?.words_written || 0;
+        const wordsWritten = milestone?.words_written || taskFile?.word_count || 0;
         const requiredWords = milestone?.required_words || 0;
         const taskStatus = requiredWords > 0 && wordsWritten >= requiredWords ? 'Target Met' : 'Pending';
         
@@ -152,7 +163,7 @@ const RefundMenu = () => {
         description: errorMessage,
         variant: "destructive"
       });
-      setRefunds([]); // Set empty array on error to prevent undefined state
+      setRefunds([]);
     } finally {
       setLoading(false);
     }
