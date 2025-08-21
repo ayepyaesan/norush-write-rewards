@@ -494,7 +494,7 @@ const UserDashboard = () => {
           {/* Payments Tab */}
           <TabsContent value="payments" className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold text-foreground mb-2">Payment & Refund History</h2>
+              <h2 className="text-2xl font-bold text-foreground mb-2">Payment History</h2>
               <p className="text-muted-foreground">Track your deposits and refund earnings</p>
             </div>
 
