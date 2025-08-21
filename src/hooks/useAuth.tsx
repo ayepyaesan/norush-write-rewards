@@ -9,6 +9,7 @@ interface UserProfile {
   role: string;
   kpay_name: string | null;
   kpay_phone: string | null;
+  status: string;
 }
 
 export const useAuth = () => {
@@ -33,6 +34,15 @@ export const useAuth = () => {
               .eq('user_id', session.user.id)
               .single();
             
+            // Check if user is suspended
+            if (profile && profile.status === 'suspended') {
+              // Sign out suspended users
+              await supabase.auth.signOut();
+              setProfile(null);
+              setLoading(false);
+              return;
+            }
+            
             setProfile(profile);
             setLoading(false);
           }, 0);
@@ -56,6 +66,15 @@ export const useAuth = () => {
           .eq('user_id', session.user.id)
           .single()
           .then(({ data: profile }) => {
+            // Check if user is suspended
+            if (profile && profile.status === 'suspended') {
+              // Sign out suspended users
+              supabase.auth.signOut();
+              setProfile(null);
+              setLoading(false);
+              return;
+            }
+            
             setProfile(profile);
             setLoading(false);
           });
@@ -75,6 +94,21 @@ export const useAuth = () => {
 
     if (error) {
       return { error };
+    }
+
+    // Check if user is suspended after successful authentication
+    if (data.user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('status')
+        .eq('user_id', data.user.id)
+        .single();
+      
+      if (profile && profile.status === 'suspended') {
+        // Sign out suspended user immediately
+        await supabase.auth.signOut();
+        return { error: { message: "Your account has been suspended. Please contact administration." } };
+      }
     }
 
     return { data };

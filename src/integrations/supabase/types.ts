@@ -373,6 +373,7 @@ export type Database = {
           kpay_name: string | null
           kpay_phone: string | null
           role: string
+          status: string
           total_refund_earned: number | null
           updated_at: string
           user_id: string
@@ -385,6 +386,7 @@ export type Database = {
           kpay_name?: string | null
           kpay_phone?: string | null
           role: string
+          status?: string
           total_refund_earned?: number | null
           updated_at?: string
           user_id: string
@@ -397,6 +399,7 @@ export type Database = {
           kpay_name?: string | null
           kpay_phone?: string | null
           role?: string
+          status?: string
           total_refund_earned?: number | null
           updated_at?: string
           user_id?: string

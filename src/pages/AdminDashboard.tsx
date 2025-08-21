@@ -26,6 +26,7 @@ interface UserProfile {
   kpay_name: string | null;
   kpay_phone: string | null;
   has_access: boolean;
+  status: string;
   created_at: string;
 }
 interface Task {
@@ -91,6 +92,10 @@ const AdminDashboard = () => {
     password: ""
   });
   const [filterStatus, setFilterStatus] = useState("all");
+  const [userStatusFilter, setUserStatusFilter] = useState("all");
+  const [showStatusConfirm, setShowStatusConfirm] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [newStatus, setNewStatus] = useState<string>("");
   const [dateRange, setDateRange] = useState("7");
   const [darkMode, setDarkMode] = useState(false);
   const [chartData, setChartData] = useState<ChartData[]>([]);
@@ -561,12 +566,52 @@ const AdminDashboard = () => {
       });
     }
   };
+  const handleStatusChange = (user: UserProfile, newStatus: string) => {
+    setSelectedUser(user);
+    setNewStatus(newStatus);
+    setShowStatusConfirm(true);
+  };
+
+  const confirmStatusChange = async () => {
+    if (!selectedUser || !newStatus) return;
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          status: newStatus,
+          has_access: newStatus === 'active'
+        })
+        .eq('user_id', selectedUser.user_id);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: `User ${newStatus === 'active' ? 'activated' : 'suspended'} successfully`,
+        variant: "default"
+      });
+      
+      loadUsers();
+      setShowStatusConfirm(false);
+      setSelectedUser(null);
+      setNewStatus("");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `Failed to update user status`,
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleSuspendUser = async (userId: string, suspend: boolean) => {
     try {
       const {
         error
       } = await supabase.from('profiles').update({
-        has_access: !suspend
+        has_access: !suspend,
+        status: suspend ? 'suspended' : 'active'
       }).eq('user_id', userId);
       if (error) throw error;
       toast({
@@ -792,7 +837,11 @@ const AdminDashboard = () => {
     return matchesSearch && matchesStatus;
   });
   const filteredUsers = users.filter(user => {
-    return searchQuery === '' || user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) || user.role?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = searchQuery === '' || 
+      user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      user.role?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = userStatusFilter === 'all' || user.status === userStatusFilter;
+    return matchesSearch && matchesStatus;
   });
   const filteredTasks = tasks.filter(task => {
     const matchesSearch = searchQuery === '' || task.task_name?.toLowerCase().includes(searchQuery.toLowerCase());
@@ -1230,6 +1279,25 @@ const AdminDashboard = () => {
                 </Dialog>
               </div>
             </div>
+
+            <div className="mb-4 flex gap-4">
+              <Input 
+                placeholder="Search users..." 
+                value={searchQuery} 
+                onChange={e => setSearchQuery(e.target.value)} 
+                className="max-w-md" 
+              />
+              <Select value={userStatusFilter} onValueChange={setUserStatusFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="suspended">Suspended</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             
             <Card className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'} shadow-lg`}>
               <CardContent className="p-0">
@@ -1238,7 +1306,7 @@ const AdminDashboard = () => {
                     <TableRow>
                       <TableHead>User</TableHead>
                       <TableHead>Role</TableHead>
-                      <TableHead>Access</TableHead>
+                      <TableHead>Status</TableHead>
                       <TableHead>KPay Info</TableHead>
                       <TableHead>Joined</TableHead>
                       <TableHead>Actions</TableHead>
@@ -1265,8 +1333,8 @@ const AdminDashboard = () => {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge className={user.has_access ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                            {user.has_access ? 'Active' : 'Suspended'}
+                          <Badge variant={user.status === 'active' ? 'default' : 'destructive'}>
+                            {user.status === 'active' ? 'Active' : 'Suspended'}
                           </Badge>
                         </TableCell>
                         <TableCell>
@@ -1279,11 +1347,31 @@ const AdminDashboard = () => {
                           {new Date(user.created_at).toLocaleDateString()}
                         </TableCell>
                         <TableCell>
-                          {user.role !== 'admin' && <div className="flex gap-2">
-                              <Button size="sm" variant={user.has_access ? "destructive" : "default"} onClick={() => handleSuspendUser(user.user_id, user.has_access)}>
-                                {user.has_access ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
-                              </Button>
-                            </div>}
+                          {user.role !== 'admin' && (
+                            <div className="flex gap-2">
+                              {user.status === 'active' ? (
+                                <Button 
+                                  size="sm" 
+                                  variant="destructive" 
+                                  onClick={() => handleStatusChange(user, 'suspended')}
+                                  title="Suspend User"
+                                >
+                                  <UserX className="w-4 h-4" />
+                                  Suspend
+                                </Button>
+                              ) : (
+                                <Button 
+                                  size="sm" 
+                                  variant="default" 
+                                  onClick={() => handleStatusChange(user, 'active')}
+                                  title="Activate User"
+                                >
+                                  <UserCheck className="w-4 h-4" />
+                                  Activate
+                                </Button>
+                              )}
+                            </div>
+                          )}
                         </TableCell>
                       </TableRow>)}
                   </TableBody>
@@ -1808,6 +1896,31 @@ const AdminDashboard = () => {
             </Card>
           </div>}
       </div>
+
+      {/* User Status Confirmation Dialog */}
+      <Dialog open={showStatusConfirm} onOpenChange={setShowStatusConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Status Change</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to {newStatus === 'active' ? 'activate' : 'suspend'} user "{selectedUser?.full_name}"?
+              {newStatus === 'suspended' && " This will prevent them from signing in to the application."}
+              {newStatus === 'active' && " This will allow them to sign in to the application."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowStatusConfirm(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant={newStatus === 'suspended' ? 'destructive' : 'default'} 
+              onClick={confirmStatusChange}
+            >
+              {newStatus === 'active' ? 'Activate User' : 'Suspend User'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>;
 };
 export default AdminDashboard;
