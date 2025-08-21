@@ -563,7 +563,7 @@ const TaskEditor = ({ taskId }: TaskEditorProps) => {
                         </div>
                         <div className="text-right">
                           <div className="font-semibold text-success">
-                            {milestone.refund_status === 'approved' ? 
+                            {(milestone.refund_status === 'approved' || milestone.refund_status === 'completed') ? 
                               `+${milestone.refund_amount} MMK` : 
                               milestone.status === 'completed' ? 
                                 `${milestone.refund_amount} MMK (Pending)` : 
@@ -571,7 +571,7 @@ const TaskEditor = ({ taskId }: TaskEditorProps) => {
                             }
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            {milestone.refund_status === 'approved' ? 'Refund Approved' : 
+                            {(milestone.refund_status === 'approved' || milestone.refund_status === 'completed') ? 'Refund Received' : 
                              milestone.status === 'completed' ? 'Awaiting Review' : 
                              'Not Eligible'}
                           </div>
