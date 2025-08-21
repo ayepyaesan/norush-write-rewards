@@ -354,9 +354,10 @@ const DailyTextEditor = () => {
 
       // Success
       toast({
-        title: "Submission Successful!",
+        title: "Submission Successful! ✅",
         description: "Your refund request has been sent for review.",
         variant: "default",
+        duration: 5000,
       });
 
       setValidationErrors([]);
@@ -513,13 +514,30 @@ const DailyTextEditor = () => {
             <TabsContent key={day} value={day.toString()} className="space-y-6">
               {/* Validation Errors Display */}
               {validationErrors.length > 0 && (
-                <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
-                  <h4 className="text-destructive font-medium mb-2">Submission Errors:</h4>
-                  <ul className="text-sm text-destructive space-y-1">
-                    {validationErrors.map((error, index) => (
-                      <li key={index}>• {error}</li>
-                    ))}
-                  </ul>
+                <div className="bg-destructive/10 border-l-4 border-destructive rounded-lg p-6 mb-6">
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-destructive flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-destructive-foreground text-sm font-bold">!</span>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-destructive font-semibold text-lg mb-3">
+                        Your text does not meet submission criteria. Please revise and try again.
+                      </h4>
+                      <ul className="space-y-2">
+                        {validationErrors.map((error, index) => (
+                          <li key={index} className="text-destructive flex items-start gap-2">
+                            <span className="text-destructive mt-1.5 w-1.5 h-1.5 rounded-full bg-destructive flex-shrink-0"></span>
+                            <span className="text-sm leading-relaxed">{error}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="mt-4 p-3 bg-muted/30 rounded border-l-2 border-muted-foreground/30">
+                        <p className="text-sm text-muted-foreground">
+                          <strong>Note:</strong> Only validated content that meets all criteria will be sent to the Admin Panel for refund review.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
               
