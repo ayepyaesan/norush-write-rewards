@@ -170,7 +170,7 @@ export const RichTextEditor = ({
               {showSubmitButton && onSubmit && (
                 <Button 
                   onClick={onSubmit}
-                  disabled={isSubmitting || wordCount === 0}
+                  disabled={isSubmitting}
                   className="gradient-warm hover-lift flex items-center gap-2"
                 >
                   {isSubmitting ? 'Validating...' : 'Submit for Review'}
