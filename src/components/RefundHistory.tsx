@@ -44,6 +44,14 @@ const RefundHistory = ({ userId }: RefundHistoryProps) => {
         loadRefundHistory();
       })
       .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'refund_requests',
+        filter: `user_id=eq.${userId}`
+      }, () => {
+        loadRefundHistory();
+      })
+      .on('postgres_changes', {
         event: 'UPDATE',
         schema: 'public',
         table: 'profiles',
@@ -85,23 +93,59 @@ const RefundHistory = ({ userId }: RefundHistoryProps) => {
 
       if (error) throw error;
 
-      if (!refunds || refunds.length === 0) {
+      // Get approved refund requests
+      const { data: approvedRefunds, error: approvedError } = await supabase
+        .from('refund_requests')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false });
+
+      if (approvedError) throw approvedError;
+
+      // Combine both arrays
+      const allRefunds = [...(refunds || []), ...(approvedRefunds || [])];
+
+      if (allRefunds.length === 0) {
         setRefundHistory([]);
         return;
       }
 
       // Get task names
-      const taskIds = [...new Set(refunds.map(r => r.task_id))];
+      const taskIds = [...new Set(allRefunds.map(r => r.task_id))];
       const { data: tasks } = await supabase
         .from('tasks')
         .select('id, task_name')
         .in('id', taskIds);
 
+      // Get milestone data for approved refunds
+      const milestoneIds = approvedRefunds?.map(r => r.milestone_id).filter(Boolean) || [];
+      const { data: milestones } = milestoneIds.length > 0 
+        ? await supabase
+            .from('daily_milestones')
+            .select('id, day_number')
+            .in('id', milestoneIds)
+        : { data: [] };
+
       // Combine data
-      const refundsWithTaskNames: RefundHistoryEntry[] = refunds.map(refund => ({
-        ...refund,
-        task_name: tasks?.find(t => t.id === refund.task_id)?.task_name || 'Unknown Task'
-      }));
+      const refundsWithTaskNames: RefundHistoryEntry[] = allRefunds.map(refund => {
+        // Check if this is a refund_request (has milestone_id) or refund_history (has day_number)
+        const isRefundRequest = 'milestone_id' in refund;
+        const milestone = isRefundRequest ? milestones?.find(m => m.id === (refund as any).milestone_id) : null;
+        const dayNumber = isRefundRequest ? (milestone?.day_number || 1) : (refund as any).day_number;
+        const amount = isRefundRequest ? (refund as any).amount : (refund as any).refund_amount;
+        
+        return {
+          id: refund.id,
+          task_id: refund.task_id,
+          day_number: dayNumber,
+          refund_amount: amount,
+          status: refund.status === 'approved' ? 'received' : refund.status,
+          processed_at: refund.processed_at,
+          created_at: refund.created_at,
+          task_name: tasks?.find(t => t.id === refund.task_id)?.task_name || 'Unknown Task'
+        };
+      }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
       setRefundHistory(refundsWithTaskNames);
     } catch (error) {
