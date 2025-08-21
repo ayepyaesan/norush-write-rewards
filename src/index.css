@@ -9,46 +9,46 @@ All colors MUST be HSL.
 @layer base {
   :root {
     --background: 250 100% 98%;
-    --foreground: 230 15% 25%;
+    --foreground: 220 25% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 230 15% 25%;
+    --card-foreground: 220 25% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 230 15% 25%;
+    --popover-foreground: 220 25% 15%;
 
-    --primary: 240 100% 75%;
+    --primary: 240 100% 65%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 280 100% 85%;
+    --primary-glow: 280 100% 75%;
 
-    --secondary: 300 50% 95%;
-    --secondary-foreground: 230 15% 25%;
+    --secondary: 300 60% 85%;
+    --secondary-foreground: 220 25% 15%;
 
-    --muted: 250 50% 96%;
-    --muted-foreground: 230 10% 50%;
+    --muted: 250 60% 92%;
+    --muted-foreground: 220 15% 40%;
 
-    --accent: 320 60% 92%;
-    --accent-foreground: 230 15% 25%;
+    --accent: 320 70% 80%;
+    --accent-foreground: 220 25% 15%;
 
-    --success: 160 60% 70%;
+    --success: 160 70% 55%;
     --success-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
 
     /* Study-inspired colors */
-    --sky: 200 100% 85%;
-    --sky-foreground: 200 20% 20%;
-    --mint: 150 60% 80%;
-    --mint-foreground: 150 20% 20%;
-    --lavender: 270 60% 85%;
-    --lavender-foreground: 270 20% 20%;
-    --ivory: 45 60% 96%;
-    --ivory-foreground: 45 20% 20%;
+    --sky: 200 100% 70%;
+    --sky-foreground: 200 30% 15%;
+    --mint: 150 70% 65%;
+    --mint-foreground: 150 30% 15%;
+    --lavender: 270 70% 70%;
+    --lavender-foreground: 270 30% 15%;
+    --ivory: 45 70% 90%;
+    --ivory-foreground: 45 30% 15%;
 
-    --border: 250 30% 90%;
-    --input: 250 50% 97%;
-    --ring: 240 100% 75%;
+    --border: 250 40% 85%;
+    --input: 250 60% 94%;
+    --ring: 240 100% 65%;
 
     /* Pastel gradients */
     --gradient-warm: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
