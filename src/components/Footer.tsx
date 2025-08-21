@@ -32,9 +32,11 @@ const Footer = () => {
           {/* Left Section - Logo & Tagline */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">N</span>
-              </div>
+              <img 
+                src="/lovable-uploads/4227be48-8648-4d90-ab4c-175f6c77f066.png" 
+                alt="No Rush logo" 
+                className="w-8 h-8"
+              />
               <span className="text-2xl font-bold text-foreground">NoRush</span>
             </div>
             <p className="text-muted-foreground text-sm leading-relaxed max-w-xs">
