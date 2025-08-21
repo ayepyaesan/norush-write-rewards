@@ -12,6 +12,8 @@ import Payment from "./pages/Payment";
 import TaskWorkspace from "./pages/TaskWorkspace";
 import RefundSummary from "./pages/RefundSummary";
 import CombinedDashboard from "./pages/CombinedDashboard";
+import UserDashboard from "./pages/UserDashboard";
+import TaskEditor from "./pages/TaskEditor";
 import AdminDashboard from "./pages/AdminDashboard";
 import RichTextEditorPage from "./pages/RichTextEditorPage";
 import NotFound from "./pages/NotFound";
@@ -42,12 +44,17 @@ const App = () => (
           } />
           <Route path="/dashboard" element={
             <ProtectedRoute requiredRole="user">
+              <UserDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/combined-dashboard" element={
+            <ProtectedRoute requiredRole="user">
               <CombinedDashboard />
             </ProtectedRoute>
           } />
-          <Route path="/user/dashboard" element={
+          <Route path="/task-editor/:taskId" element={
             <ProtectedRoute requiredRole="user">
-              <CombinedDashboard />
+              <TaskEditor />
             </ProtectedRoute>
           } />
           <Route path="/task/:taskId" element={

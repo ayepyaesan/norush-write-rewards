@@ -38,7 +38,7 @@ const TaskCreation = () => {
     navigate("/");
   };
 
-  const BASE_RATE_PER_WORD = 30; // MMK per word
+  const BASE_RATE_PER_WORD = 10; // MMK per word (updated as per requirements)
   const depositAmount = wordCount ? parseInt(wordCount) * BASE_RATE_PER_WORD : 0;
 
   if (!user) {
@@ -91,20 +91,35 @@ const TaskCreation = () => {
           variant: "destructive",
         });
       } else {
-        // Generate daily progress entries
+        // Generate daily milestones and deposits
         try {
-          const { error: progressError } = await supabase.rpc('generate_daily_progress_entries', {
+          const { error: milestonesError } = await supabase.rpc('generate_daily_milestones', {
             p_task_id: task.id,
             p_user_id: user.id,
             p_word_count: parseInt(wordCount),
             p_duration_days: parseInt(durationDays)
           });
 
-          if (progressError) {
-            console.error('Progress generation error:', progressError);
+          if (milestonesError) {
+            console.error('Milestones generation error:', milestonesError);
           }
-        } catch (progressErr) {
-          console.error('Progress generation failed:', progressErr);
+
+          // Create deposit record
+          const { error: depositError } = await supabase
+            .from('deposits')
+            .insert({
+              task_id: task.id,
+              user_id: user.id,
+              amount: depositAmount,
+              payment_method: 'kpay',
+              payment_status: 'pending'
+            });
+
+          if (depositError) {
+            console.error('Deposit creation error:', depositError);
+          }
+        } catch (err) {
+          console.error('Setup failed:', err);
         }
 
         toast({
