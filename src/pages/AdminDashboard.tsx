@@ -809,8 +809,8 @@ const AdminDashboard = () => {
                 },
                 { 
                   title: "Total Revenue", 
-                  value: `$${stats.totalRevenue.toLocaleString()}`, 
-                  change: `$${stats.totalProfit.toLocaleString()} profit`, 
+                  value: `${stats.totalRevenue.toLocaleString()} MMK`, 
+                  change: `${stats.totalProfit.toLocaleString()} MMK profit`, 
                   icon: DollarSign, 
                   color: "green",
                   realTime: true
@@ -912,7 +912,7 @@ const AdminDashboard = () => {
                   <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                     <div className="flex justify-between">
                       <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Total Revenue</span>
-                      <span className="font-semibold text-green-600">${stats.totalRevenue.toLocaleString()}</span>
+                      <span className="font-semibold text-green-600">{stats.totalRevenue.toLocaleString()} MMK</span>
                     </div>
                   </div>
                 </CardContent>
@@ -943,7 +943,7 @@ const AdminDashboard = () => {
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="font-medium">${deposit.amount}</p>
+                            <p className="font-medium">{deposit.amount.toLocaleString()} MMK</p>
                             <Badge className={getStatusColor(deposit.payment_status)}>
                               {deposit.payment_status}
                             </Badge>
@@ -1258,7 +1258,7 @@ const AdminDashboard = () => {
                         </TableCell>
                         <TableCell>{task.word_count?.toLocaleString()}</TableCell>
                         <TableCell>{task.duration_days} days</TableCell>
-                        <TableCell>${task.deposit_amount}</TableCell>
+                        <TableCell>{task.deposit_amount?.toLocaleString()} MMK</TableCell>
                         <TableCell>
                           <Badge className={getStatusColor(task.status)}>
                             {task.status}
@@ -1320,7 +1320,7 @@ const AdminDashboard = () => {
                         <div className="space-y-1">
                           <div className="flex justify-between">
                             <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Amount:</span>
-                            <span className="font-medium">${deposit.amount}</span>
+                            <span className="font-medium">{deposit.amount?.toLocaleString()} MMK</span>
                           </div>
                           <div className="flex justify-between">
                             <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Code:</span>
@@ -1460,7 +1460,7 @@ const AdminDashboard = () => {
                     <div className="text-center">
                       <BarChart3 className="w-12 h-12 mx-auto text-gray-400 mb-2" />
                       <p className="text-gray-600 dark:text-gray-400">Revenue Chart</p>
-                      <p className="text-2xl font-bold text-green-600">${stats.totalRevenue.toLocaleString()}</p>
+                      <p className="text-2xl font-bold text-green-600">{stats.totalRevenue.toLocaleString()} MMK</p>
                     </div>
                   </div>
                 </CardContent>
@@ -1473,8 +1473,8 @@ const AdminDashboard = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {[
-                    { label: "Total Revenue", value: `$${stats.totalRevenue.toLocaleString()}`, change: "+12%" },
-                    { label: "Total Profit", value: `$${stats.totalProfit.toLocaleString()}`, change: "+8%" },
+                    { label: "Total Revenue", value: `${stats.totalRevenue.toLocaleString()} MMK`, change: "+12%" },
+                    { label: "Total Profit", value: `${stats.totalProfit.toLocaleString()} MMK`, change: "+8%" },
                     { label: "Active Users", value: stats.activeUsers, change: "+5%" },
                     { label: "Task Completion Rate", value: `${stats.avgTaskCompletion}%`, change: "+3%" },
                     { label: "Payment Success Rate", value: `${Math.round((stats.verifiedPayments / stats.totalPayments) * 100 || 0)}%`, change: "+2%" }
@@ -1605,7 +1605,7 @@ const AdminDashboard = () => {
                   
                   <div>
                     <label className="text-sm font-medium">Minimum Deposit Amount</label>
-                    <Input className="mt-1" placeholder="$10" />
+                    <Input className="mt-1" placeholder="10,000 MMK" />
                   </div>
                 </CardContent>
               </Card>
