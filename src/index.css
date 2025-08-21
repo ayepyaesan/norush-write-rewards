@@ -51,7 +51,7 @@ All colors MUST be HSL.
     --ring: 240 100% 65%;
 
     /* Pastel gradients */
-    --gradient-warm: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-warm: linear-gradient(135deg, hsl(220 100% 60%), hsl(260 100% 70%));
     --gradient-hero: linear-gradient(135deg, hsl(280 60% 95%), hsl(240 80% 98%), hsl(200 60% 95%));
     --gradient-card: linear-gradient(145deg, hsl(var(--card)), hsl(var(--accent) / 0.3));
 
