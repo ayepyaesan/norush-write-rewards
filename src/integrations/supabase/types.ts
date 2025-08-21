@@ -68,6 +68,68 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_milestones: {
+        Row: {
+          content_validated: boolean | null
+          created_at: string | null
+          day_number: number
+          id: string
+          refund_amount: number | null
+          refund_status: string | null
+          required_words: number
+          status: string | null
+          target_date: string
+          task_id: string
+          updated_at: string | null
+          user_id: string
+          validation_notes: string | null
+          words_carried_forward: number | null
+          words_written: number | null
+        }
+        Insert: {
+          content_validated?: boolean | null
+          created_at?: string | null
+          day_number: number
+          id?: string
+          refund_amount?: number | null
+          refund_status?: string | null
+          required_words: number
+          status?: string | null
+          target_date: string
+          task_id: string
+          updated_at?: string | null
+          user_id: string
+          validation_notes?: string | null
+          words_carried_forward?: number | null
+          words_written?: number | null
+        }
+        Update: {
+          content_validated?: boolean | null
+          created_at?: string | null
+          day_number?: number
+          id?: string
+          refund_amount?: number | null
+          refund_status?: string | null
+          required_words?: number
+          status?: string | null
+          target_date?: string
+          task_id?: string
+          updated_at?: string | null
+          user_id?: string
+          validation_notes?: string | null
+          words_carried_forward?: number | null
+          words_written?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_milestones_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_progress: {
         Row: {
           created_at: string
@@ -108,6 +170,59 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "daily_progress_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deposits: {
+        Row: {
+          admin_notes: string | null
+          amount: number
+          created_at: string | null
+          id: string
+          payment_method: string | null
+          payment_status: string | null
+          screenshot_url: string | null
+          task_id: string
+          updated_at: string | null
+          user_id: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          amount: number
+          created_at?: string | null
+          id?: string
+          payment_method?: string | null
+          payment_status?: string | null
+          screenshot_url?: string | null
+          task_id: string
+          updated_at?: string | null
+          user_id: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          amount?: number
+          created_at?: string | null
+          id?: string
+          payment_method?: string | null
+          payment_status?: string | null
+          screenshot_url?: string | null
+          task_id?: string
+          updated_at?: string | null
+          user_id?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deposits_task_id_fkey"
             columns: ["task_id"]
             isOneToOne: false
             referencedRelation: "tasks"
@@ -284,6 +399,50 @@ export type Database = {
         }
         Relationships: []
       }
+      task_files: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          day_number: number
+          id: string
+          task_id: string
+          title: string
+          updated_at: string | null
+          user_id: string
+          word_count: number | null
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string | null
+          day_number: number
+          id?: string
+          task_id: string
+          title?: string
+          updated_at?: string | null
+          user_id: string
+          word_count?: number | null
+        }
+        Update: {
+          content?: string | null
+          created_at?: string | null
+          day_number?: number
+          id?: string
+          task_id?: string
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+          word_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_files_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           base_rate_per_word: number | null
@@ -334,6 +493,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_daily_milestones: {
+        Args: {
+          p_duration_days: number
+          p_start_date?: string
+          p_task_id: string
+          p_user_id: string
+          p_word_count: number
+        }
+        Returns: undefined
+      }
       generate_daily_progress_entries: {
         Args: {
           p_duration_days: number
