@@ -167,13 +167,6 @@ export const RichTextEditor = ({
                 <Save className="w-4 h-4" />
                 {isSaving ? 'Saving...' : 'Save'}
               </Button>
-              <Button 
-                onClick={onSubmit}
-                disabled={isSubmitting}
-                className="gradient-warm hover-lift flex items-center gap-2"
-              >
-                {isSubmitting ? 'Validating...' : 'Submit for Review'}
-              </Button>
             </div>
           </div>
         </div>
