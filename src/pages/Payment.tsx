@@ -63,11 +63,9 @@ const Payment = () => {
 
       if (paymentData) {
         setPayment(paymentData);
-        if (paymentData.screenshot_url) {
-          setCurrentStep(4);
-        } else {
-          setCurrentStep(3);
-        }
+        // Always start at step 1 for better user experience
+        // Users can navigate through steps using the progress indicators
+        setCurrentStep(1);
       } else {
         // Create payment record
         const { data: newPayment, error: paymentError } = await supabase
