@@ -37,12 +37,12 @@ const Navigation = () => {
             to="/"
             className="flex items-center gap-2 text-2xl font-bold text-primary hover:text-primary-glow transition-colors duration-300"
           >
-            NoRush
             <img 
               src="/lovable-uploads/4227be48-8648-4d90-ab4c-175f6c77f066.png" 
               alt="No Rush logo" 
               className="w-8 h-8"
             />
+            NoRush
           </Link>
 
           {/* Desktop Navigation */}
