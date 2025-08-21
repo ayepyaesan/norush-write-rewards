@@ -21,31 +21,36 @@ export const useAuth = () => {
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Fetch user profile
-          setTimeout(async () => {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('user_id', session.user.id)
-              .single();
-            
-            // Check if user is suspended
-            if (profile && profile.status === 'suspended') {
-              // Sign out suspended users
-              await supabase.auth.signOut();
-              setProfile(null);
+          // Check user profile and suspension status immediately
+          supabase
+            .from('profiles')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .single()
+            .then(({ data: profile, error }) => {
+              // Check if user is suspended
+              if (profile && profile.status === 'suspended') {
+                // Sign out suspended users immediately
+                supabase.auth.signOut();
+                setProfile(null);
+                setLoading(false);
+                return;
+              }
+              
+              if (error) {
+                setProfile(null);
+                setLoading(false);
+                return;
+              }
+              
+              setProfile(profile);
               setLoading(false);
-              return;
-            }
-            
-            setProfile(profile);
-            setLoading(false);
-          }, 0);
+            });
         } else {
           setProfile(null);
           setLoading(false);
@@ -65,11 +70,17 @@ export const useAuth = () => {
           .select('*')
           .eq('user_id', session.user.id)
           .single()
-          .then(({ data: profile }) => {
+          .then(({ data: profile, error }) => {
             // Check if user is suspended
             if (profile && profile.status === 'suspended') {
               // Sign out suspended users
               supabase.auth.signOut();
+              setProfile(null);
+              setLoading(false);
+              return;
+            }
+            
+            if (error) {
               setProfile(null);
               setLoading(false);
               return;
