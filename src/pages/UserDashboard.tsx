@@ -520,10 +520,6 @@ const UserDashboard = () => {
                       <div className="text-lg font-bold text-primary mb-2">
                         Deposit: {payment.amount.toLocaleString()} MMK
                       </div>
-                      <div className="text-sm text-success">
-                        Refund Earned: {task.daily_milestones?.reduce((sum, milestone) => 
-                          sum + (milestone.refund_status === 'approved' ? milestone.refund_amount : 0), 0) || 0} MMK
-                      </div>
                     </CardContent>
                   </Card>
                 );
