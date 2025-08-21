@@ -6,7 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { 
-  LogOut, FileText, Plus, History, 
+  LogOut, FileText, Plus,
   DollarSign, Target, TrendingUp, CheckCircle,
   AlertCircle, Edit3, Lock
 } from "lucide-react";
@@ -260,9 +260,8 @@ const UserDashboard = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="tasks">My Tasks</TabsTrigger>
-            <TabsTrigger value="history">History</TabsTrigger>
             <TabsTrigger value="payments">Payments</TabsTrigger>
             <TabsTrigger value="reports">Reports</TabsTrigger>
           </TabsList>
@@ -439,46 +438,6 @@ const UserDashboard = () => {
             </div>
           </TabsContent>
 
-          {/* History Tab */}
-          <TabsContent value="history" className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-foreground mb-2">Task History</h2>
-              <p className="text-muted-foreground">View your completed and past tasks</p>
-            </div>
-            
-            <div className="grid gap-4">
-              {tasks.filter(task => task.status === 'completed').map((task) => (
-                <Card key={task.id} className="gradient-card border-0 shadow-warm">
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-semibold text-foreground">{task.task_name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Completed on {task.deadline ? new Date(task.deadline).toLocaleDateString() : 'N/A'}
-                        </p>
-                        <div className="flex gap-4 mt-2 text-sm">
-                          <span className="text-primary">{task.word_count.toLocaleString()} words</span>
-                          <span className="text-accent">{task.duration_days} days</span>
-                          <span className="text-success">{task.deposit_amount.toLocaleString()} MMK deposit</span>
-                        </div>
-                      </div>
-                      <Badge variant="default">Completed</Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-              
-              {tasks.filter(task => task.status === 'completed').length === 0 && (
-                <Card className="gradient-card border-0 shadow-warm">
-                  <CardContent className="text-center py-12">
-                    <History className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No Completed Tasks</h3>
-                    <p className="text-muted-foreground">Complete your first task to see it here</p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </TabsContent>
 
           {/* Payments Tab */}
           <TabsContent value="payments" className="space-y-6">
