@@ -253,6 +253,11 @@ const DailyTextEditor = () => {
             ? { ...file, content: currentContent, word_count: wordCount }
             : file
         ));
+
+        // Force re-render of progress bar by updating task state
+        if (task) {
+          setTask({ ...task });
+        }
       }
     } catch (error) {
       console.error('Unexpected error during save:', error);
