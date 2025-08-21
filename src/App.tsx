@@ -14,6 +14,7 @@ import RefundSummary from "./pages/RefundSummary";
 import CombinedDashboard from "./pages/CombinedDashboard";
 import UserDashboard from "./pages/UserDashboard";
 import TaskEditor from "./pages/TaskEditor";
+import TaskEditorPage from "./pages/TaskEditorPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import DailyTextEditor from "./pages/DailyTextEditor";
 import NotFound from "./pages/NotFound";
@@ -59,7 +60,7 @@ const App = () => (
           } />
           <Route path="/task-editor/:taskId" element={
             <ProtectedRoute requiredRole="user">
-              <TaskEditor />
+              <TaskEditorPage />
             </ProtectedRoute>
           } />
           <Route path="/task/:taskId" element={

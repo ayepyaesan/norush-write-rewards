@@ -6,11 +6,11 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { 
-  User, LogOut, FileText, Plus, History, Calendar, 
-  DollarSign, Target, Clock, TrendingUp, CheckCircle,
-  AlertCircle, PlayCircle, Edit3
+  LogOut, FileText, Plus, History, 
+  DollarSign, Target, TrendingUp, CheckCircle,
+  AlertCircle, Edit3, Lock
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
@@ -55,6 +55,7 @@ interface DailyMilestone {
   target_date: string;
   required_words: number;
   words_written: number;
+  words_carried_forward: number;
   status: string;
   refund_amount: number;
   refund_status: string;
@@ -77,7 +78,7 @@ const UserDashboard = () => {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("tasks");
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -209,15 +210,6 @@ const UserDashboard = () => {
     navigate("/");
   };
 
-  const getTaskStatusColor = (task: Task) => {
-    const payment = task.payments?.[0];
-    if (!payment) return "text-yellow-600";
-    if (payment.payment_status === 'verified') return "text-green-600";
-    if (payment.screenshot_url && payment.payment_status === 'pending') return "text-orange-600";
-    if (payment.payment_status === 'pending' && !payment.screenshot_url) return "text-blue-600";
-    return "text-red-600";
-  };
-
   const getTaskStatusText = (task: Task) => {
     const payment = task.payments?.[0];
     if (!payment) return "Payment Required";
@@ -225,13 +217,6 @@ const UserDashboard = () => {
     if (payment.screenshot_url && payment.payment_status === 'pending') return "Verification Pending";
     if (payment.payment_status === 'pending' && !payment.screenshot_url) return "Upload Payment Proof";
     return "Payment Required";
-  };
-
-  const getTodayProgress = (taskWithMilestones: any) => {
-    const today = new Date().toISOString().split('T')[0];
-    return taskWithMilestones.daily_milestones?.find(
-      (milestone: DailyMilestone) => milestone.target_date === today
-    );
   };
 
   if (isLoading) {
@@ -251,9 +236,6 @@ const UserDashboard = () => {
   }
 
   const completedTasks = tasks.filter(task => task.status === 'completed').length;
-  const activeTasks = tasks.filter(task => task.status === 'in_progress').length;
-  const totalWordCount = tasks.reduce((sum, task) => sum + task.word_count, 0);
-  const totalDeposits = tasks.reduce((sum, task) => sum + task.deposit_amount, 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-muted/30 via-background to-muted/20 p-4">
@@ -268,7 +250,7 @@ const UserDashboard = () => {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Welcome back, {profile.full_name}!</h1>
-            <p className="text-muted-foreground">Track your writing journey and manage your tasks</p>
+            <p className="text-muted-foreground">Manage your writing tasks with deposit commitment system</p>
           </div>
           <Button onClick={handleSignOut} variant="outline" className="flex items-center gap-2">
             <LogOut className="w-4 h-4" />
@@ -278,141 +260,77 @@ const UserDashboard = () => {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="tasks">My Tasks</TabsTrigger>
-            <TabsTrigger value="progress">Progress</TabsTrigger>
+            <TabsTrigger value="history">History</TabsTrigger>
             <TabsTrigger value="payments">Payments</TabsTrigger>
+            <TabsTrigger value="reports">Reports</TabsTrigger>
           </TabsList>
 
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="gradient-card border-0 shadow-warm">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
-                  <FileText className="h-4 w-4 text-primary" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{tasks.length}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {activeTasks} active, {completedTasks} completed
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="gradient-card border-0 shadow-warm">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Words</CardTitle>
-                  <Target className="h-4 w-4 text-accent" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{totalWordCount.toLocaleString()}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Words committed to write
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="gradient-card border-0 shadow-warm">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Deposits</CardTitle>
-                  <DollarSign className="h-4 w-4 text-success" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{totalDeposits.toLocaleString()} MMK</div>
-                  <p className="text-xs text-muted-foreground">
-                    Money committed
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="gradient-card border-0 shadow-warm">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-primary" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0}%
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Task completion rate
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="gradient-card border-0 shadow-warm hover-lift cursor-pointer" onClick={() => navigate("/task-creation")}>
-                <CardHeader className="text-center">
-                  <div className="w-12 h-12 mx-auto rounded-full gradient-warm flex items-center justify-center shadow-warm mb-4">
-                    <Plus className="w-6 h-6 text-primary-foreground" />
-                  </div>
-                  <CardTitle className="text-xl">Create New Task</CardTitle>
-                  <CardDescription>Start a new writing challenge</CardDescription>
-                </CardHeader>
-              </Card>
-
-              <Card className="gradient-card border-0 shadow-warm cursor-pointer" onClick={() => setActiveTab("tasks")}>
-                <CardHeader className="text-center">
-                  <div className="w-12 h-12 mx-auto rounded-full gradient-warm flex items-center justify-center shadow-warm mb-4">
-                    <Edit3 className="w-6 h-6 text-primary-foreground" />
-                  </div>
-                  <CardTitle className="text-xl">Continue Writing</CardTitle>
-                  <CardDescription>Work on your active tasks</CardDescription>
-                </CardHeader>
-              </Card>
-
-              <Card className="gradient-card border-0 shadow-warm cursor-pointer" onClick={() => setActiveTab("progress")}>
-                <CardHeader className="text-center">
-                  <div className="w-12 h-12 mx-auto rounded-full gradient-warm flex items-center justify-center shadow-warm mb-4">
-                    <TrendingUp className="w-6 h-6 text-primary-foreground" />
-                  </div>
-                  <CardTitle className="text-xl">View Progress</CardTitle>
-                  <CardDescription>Track your daily milestones</CardDescription>
-                </CardHeader>
-              </Card>
-            </div>
-          </TabsContent>
-
-          {/* Tasks Tab */}
+          {/* Tasks Tab - Main Task File Boxes */}
           <TabsContent value="tasks" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-foreground">My Writing Tasks</h2>
+                <p className="text-muted-foreground">Manage your daily writing commitments</p>
+              </div>
+              <Button 
+                onClick={() => navigate("/task-creation")}
+                className="gradient-warm hover-lift flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Create New Task
+              </Button>
+            </div>
+
             <div className="grid gap-6">
               {tasks.map((task) => {
-                const todayProgress = getTodayProgress(task);
                 const payment = task.payments?.[0];
                 const isVerified = payment?.payment_status === 'verified';
+                const dailyTarget = Math.ceil(task.word_count / task.duration_days);
+                const totalRefundEarned = task.daily_milestones?.reduce((sum, milestone) => 
+                  sum + (milestone.refund_status === 'approved' ? milestone.refund_amount : 0), 0) || 0;
                 
                 return (
-                  <Card key={task.id} className="gradient-card border-0 shadow-warm">
+                  <Card key={task.id} className="gradient-card border-0 shadow-warm hover-lift">
                     <CardHeader>
                       <div className="flex justify-between items-start">
                         <div className="space-y-2">
-                          <CardTitle className="text-xl">{task.task_name}</CardTitle>
+                          <div className="flex items-center gap-3">
+                            <CardTitle className="text-xl">{task.task_name}</CardTitle>
+                            <Badge variant={isVerified ? "default" : "secondary"}>
+                              {getTaskStatusText(task)}
+                            </Badge>
+                          </div>
                           <CardDescription>
-                            Created on {new Date(task.created_at).toLocaleDateString()}
+                            Created {new Date(task.created_at).toLocaleDateString()} • 
+                            {task.duration_days} day challenge
                           </CardDescription>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge variant={isVerified ? "default" : "secondary"}>
-                            {getTaskStatusText(task)}
-                          </Badge>
-                          {isVerified && (
+                          {isVerified ? (
                             <Button 
-                              onClick={() => navigate(`/daily-text-editor/${task.id}`)}
+                              onClick={() => navigate(`/task-editor/${task.id}`)}
                               className="gradient-warm hover-lift"
                             >
-                              <PlayCircle className="w-4 h-4 mr-2" />
-                              Write
+                              <Edit3 className="w-4 h-4 mr-2" />
+                              Open Task Editor
+                            </Button>
+                          ) : (
+                            <Button 
+                              onClick={() => navigate(`/payment/${task.id}`)}
+                              variant="outline"
+                              className="flex items-center gap-2"
+                            >
+                              <DollarSign className="w-4 h-4" />
+                              {payment?.screenshot_url ? 'Check Payment' : 'Make Payment'}
                             </Button>
                           )}
                         </div>
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                      {/* Task Overview Grid */}
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
                         <div className="text-center">
                           <div className="text-lg font-bold text-primary">{task.word_count.toLocaleString()}</div>
                           <div className="text-xs text-muted-foreground">Total Words</div>
@@ -426,53 +344,74 @@ const UserDashboard = () => {
                           <div className="text-xs text-muted-foreground">Deposit (MMK)</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-lg font-bold text-primary">
-                            {Math.ceil(task.word_count / task.duration_days)}
-                          </div>
+                          <div className="text-lg font-bold text-primary">{dailyTarget}</div>
                           <div className="text-xs text-muted-foreground">Words/Day</div>
                         </div>
-                      </div>
-                      
-                      {todayProgress && isVerified && (
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span>Today's Progress</span>
-                            <span>{todayProgress.words_written} / {todayProgress.required_words} words</span>
-                          </div>
-                          <Progress 
-                            value={Math.min((todayProgress.words_written / todayProgress.required_words) * 100, 100)} 
-                            className="h-2" 
-                          />
+                        <div className="text-center">
+                          <div className="text-lg font-bold text-mint">{totalRefundEarned.toLocaleString()}</div>
+                          <div className="text-xs text-muted-foreground">Refund Earned</div>
                         </div>
-                      )}
-                      
-                      {!isVerified && (
-                        <div className="bg-warning/10 border border-warning/20 rounded-lg p-3 mt-4">
-                          <div className="flex items-center gap-2 text-warning">
-                            <AlertCircle className="w-4 h-4" />
-                            <span className="text-sm font-medium">
-                              {payment?.payment_status === 'pending' && !payment?.screenshot_url 
-                                ? "Upload Payment Proof" 
-                                : "Payment Required"
-                              }
-                            </span>
+                      </div>
+
+                      {/* Task Structure Overview */}
+                      {isVerified ? (
+                        <div className="bg-muted/30 rounded-lg p-4">
+                          <h4 className="font-medium text-foreground mb-3 flex items-center gap-2">
+                            <FileText className="w-4 h-4" />
+                            Task Structure
+                          </h4>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="flex items-center gap-2">
+                                <Lock className="w-3 h-3 text-muted-foreground" />
+                                Main Editor (Read-only)
+                              </span>
+                              <span className="text-muted-foreground">Synced from daily pages</span>
+                            </div>
+                            <div className="grid grid-cols-5 md:grid-cols-10 gap-1 mt-2">
+                              {Array.from({ length: task.duration_days }, (_, i) => i + 1).map((day) => {
+                                const milestone = task.daily_milestones?.find(m => m.day_number === day);
+                                const isCompleted = milestone?.status === 'completed';
+                                const isToday = milestone?.target_date === new Date().toISOString().split('T')[0];
+                                
+                                return (
+                                  <div 
+                                    key={day} 
+                                    className={`h-8 rounded text-xs flex items-center justify-center font-medium ${
+                                      isCompleted ? 'bg-success text-success-foreground' :
+                                      isToday ? 'bg-primary text-primary-foreground ring-2 ring-primary-glow' :
+                                      'bg-muted text-muted-foreground'
+                                    }`}
+                                  >
+                                    {day}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-2">
+                              💡 Each box represents a daily writing page. Green = completed, Blue = today
+                            </div>
                           </div>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {payment?.payment_status === 'pending' && !payment?.screenshot_url
-                              ? "Please upload your payment screenshot to verify your payment"
-                              : "Complete payment verification to start writing"
-                            }
-                          </p>
-                          <Button 
-                            size="sm" 
-                            className="mt-2"
-                            onClick={() => navigate(`/payment/${task.id}`)}
-                          >
-                            {payment?.payment_status === 'pending' && !payment?.screenshot_url
-                              ? "Upload Screenshot"
-                              : "Complete Payment"
-                            }
-                          </Button>
+                        </div>
+                      ) : (
+                        <div className="bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
+                          <div className="flex items-start gap-3">
+                            <AlertCircle className="w-5 h-5 text-orange-600 mt-0.5" />
+                            <div>
+                              <h4 className="text-sm font-medium text-orange-800 dark:text-orange-200">
+                                💰 Deposit Required: {task.deposit_amount.toLocaleString()} MMK
+                              </h4>
+                              <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">
+                                {payment?.screenshot_url 
+                                  ? "Your payment is being verified. You'll receive access once approved by admin."
+                                  : `Pay ${task.deposit_amount.toLocaleString()} MMK deposit (${task.word_count} words × 10 MMK per word) to unlock your task editor and start writing.`
+                                }
+                              </p>
+                              <div className="text-xs text-orange-600 dark:text-orange-400 mt-2">
+                                ℹ️ Refund Formula: Complete daily targets to earn back {Math.floor(task.deposit_amount / task.duration_days)} MMK per day
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       )}
                     </CardContent>
@@ -482,14 +421,16 @@ const UserDashboard = () => {
               
               {tasks.length === 0 && (
                 <Card className="gradient-card border-0 shadow-warm">
-                  <CardContent className="p-8 text-center">
-                    <FileText className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                    <h3 className="text-lg font-medium mb-2">No Tasks Yet</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Create your first writing task to get started
-                    </p>
-                    <Button onClick={() => navigate("/task-creation")} className="gradient-warm hover-lift">
-                      Create Your First Task
+                  <CardContent className="text-center py-12">
+                    <FileText className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No Writing Tasks Yet</h3>
+                    <p className="text-muted-foreground mb-6">Create your first writing commitment with deposit to get started</p>
+                    <Button 
+                      onClick={() => navigate("/task-creation")}
+                      className="gradient-warm hover-lift"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create New Task
                     </Button>
                   </CardContent>
                 </Card>
@@ -497,61 +438,190 @@ const UserDashboard = () => {
             </div>
           </TabsContent>
 
-          {/* Progress Tab */}
-          <TabsContent value="progress" className="space-y-6">
-            <Card className="gradient-card border-0 shadow-warm">
-              <CardHeader>
-                <CardTitle>Daily Progress Tracking</CardTitle>
-                <CardDescription>Monitor your daily writing goals and refund status</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Select a task from the Tasks tab to view detailed progress tracking.
-                </p>
-              </CardContent>
-            </Card>
+          {/* History Tab */}
+          <TabsContent value="history" className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground mb-2">Task History</h2>
+              <p className="text-muted-foreground">View your completed and past tasks</p>
+            </div>
+            
+            <div className="grid gap-4">
+              {tasks.filter(task => task.status === 'completed').map((task) => (
+                <Card key={task.id} className="gradient-card border-0 shadow-warm">
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-semibold text-foreground">{task.task_name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Completed on {task.deadline ? new Date(task.deadline).toLocaleDateString() : 'N/A'}
+                        </p>
+                        <div className="flex gap-4 mt-2 text-sm">
+                          <span className="text-primary">{task.word_count.toLocaleString()} words</span>
+                          <span className="text-accent">{task.duration_days} days</span>
+                          <span className="text-success">{task.deposit_amount.toLocaleString()} MMK deposit</span>
+                        </div>
+                      </div>
+                      <Badge variant="default">Completed</Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              
+              {tasks.filter(task => task.status === 'completed').length === 0 && (
+                <Card className="gradient-card border-0 shadow-warm">
+                  <CardContent className="text-center py-12">
+                    <History className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No Completed Tasks</h3>
+                    <p className="text-muted-foreground">Complete your first task to see it here</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           </TabsContent>
 
           {/* Payments Tab */}
           <TabsContent value="payments" className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground mb-2">Payment & Refund History</h2>
+              <p className="text-muted-foreground">Track your deposits and refund earnings</p>
+            </div>
+
+            <div className="grid gap-4">
+              {tasks.map((task) => {
+                const payment = task.payments?.[0];
+                if (!payment) return null;
+                
+                return (
+                  <Card key={task.id} className="gradient-card border-0 shadow-warm">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h4 className="font-medium">{task.task_name}</h4>
+                          <p className="text-sm text-muted-foreground">
+                            Paid on {new Date(payment.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <Badge variant={payment.payment_status === 'verified' ? "default" : "secondary"}>
+                          {payment.payment_status === 'verified' ? 'Verified' : 'Pending'}
+                        </Badge>
+                      </div>
+                      <div className="text-lg font-bold text-primary mb-2">
+                        Deposit: {payment.amount.toLocaleString()} MMK
+                      </div>
+                      <div className="text-sm text-success">
+                        Refund Earned: {task.daily_milestones?.reduce((sum, milestone) => 
+                          sum + (milestone.refund_status === 'approved' ? milestone.refund_amount : 0), 0) || 0} MMK
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+              
+              {tasks.every(task => !task.payments?.[0]) && (
+                <Card className="gradient-card border-0 shadow-warm">
+                  <CardContent className="text-center py-12">
+                    <DollarSign className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No Payment History</h3>
+                    <p className="text-muted-foreground">Create a task and make your first deposit to see payment history</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* Reports Tab */}
+          <TabsContent value="reports" className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground mb-2">Writing Reports</h2>
+              <p className="text-muted-foreground">Analyze your writing performance and refund history</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+              <Card className="gradient-card border-0 shadow-warm">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Words Written</CardTitle>
+                  <Target className="h-4 w-4 text-primary" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {tasks.reduce((total, task) => 
+                      total + (task.task_files?.reduce((sum, file) => sum + (file.word_count || 0), 0) || 0), 0
+                    ).toLocaleString()}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Across all tasks</p>
+                </CardContent>
+              </Card>
+
+              <Card className="gradient-card border-0 shadow-warm">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Refunds Earned</CardTitle>
+                  <DollarSign className="h-4 w-4 text-success" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {tasks.reduce((total, task) => 
+                      total + (task.daily_milestones?.reduce((sum, milestone) => 
+                        sum + (milestone.refund_status === 'approved' ? milestone.refund_amount : 0), 0) || 0), 0
+                    ).toLocaleString()} MMK
+                  </div>
+                  <p className="text-xs text-muted-foreground">Successfully earned back</p>
+                </CardContent>
+              </Card>
+
+              <Card className="gradient-card border-0 shadow-warm">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-primary" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0}%
+                  </div>
+                  <p className="text-xs text-muted-foreground">Task completion rate</p>
+                </CardContent>
+              </Card>
+            </div>
+
             <Card className="gradient-card border-0 shadow-warm">
               <CardHeader>
-                <CardTitle>Payment History</CardTitle>
-                <CardDescription>Track your deposits and refunds</CardDescription>
+                <CardTitle>Daily Milestone Summary</CardTitle>
+                <CardDescription>Overview of your daily writing achievements</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {tasks.map((task) => {
-                    const payment = task.payments?.[0];
-                    if (!payment) return null;
-                    
-                    return (
-                      <div key={task.id} className="border rounded-lg p-4">
-                        <div className="flex justify-between items-start mb-2">
+                {tasks.length > 0 ? (
+                  <div className="space-y-4">
+                    {tasks.map((task) => (
+                      <div key={task.id} className="border-l-4 border-primary pl-4">
+                        <h4 className="font-medium">{task.task_name}</h4>
+                        <div className="grid grid-cols-3 gap-4 mt-2 text-sm">
                           <div>
-                            <h4 className="font-medium">{task.task_name}</h4>
-                            <p className="text-sm text-muted-foreground">
-                              {new Date(payment.created_at).toLocaleDateString()}
-                            </p>
+                            <span className="text-muted-foreground">Completed Days: </span>
+                            <span className="font-medium text-success">
+                              {task.daily_milestones?.filter(m => m.status === 'completed').length || 0}
+                            </span>
                           </div>
-                          <Badge variant={payment.payment_status === 'verified' ? "default" : "secondary"}>
-                            {payment.payment_status === 'verified' ? 'Verified' : 'Pending'}
-                          </Badge>
-                        </div>
-                        <div className="text-lg font-bold text-primary">
-                          {payment.amount.toLocaleString()} MMK
+                          <div>
+                            <span className="text-muted-foreground">Pending Days: </span>
+                            <span className="font-medium text-orange-600">
+                              {task.daily_milestones?.filter(m => m.status === 'pending').length || 0}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Missed Days: </span>
+                            <span className="font-medium text-destructive">
+                              {task.daily_milestones?.filter(m => m.status === 'missed').length || 0}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    );
-                  })}
-                  
-                  {tasks.every(task => !task.payments?.[0]) && (
-                    <div className="text-center py-8">
-                      <DollarSign className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                      <p className="text-muted-foreground">No payment history yet</p>
-                    </div>
-                  )}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>No data available. Create tasks to see reports.</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
