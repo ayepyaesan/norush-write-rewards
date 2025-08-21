@@ -1509,16 +1509,12 @@ const AdminDashboard = () => {
                 </p>
               </div>
               <div className="flex gap-2">
-                {['daily', 'weekly', 'monthly', 'yearly'].map(period => <div key={period} className="flex gap-1">
-                    <Button onClick={() => exportData('CSV', period)} variant="outline" size="sm">
+                {['daily', 'weekly', 'monthly', 'yearly'].map(period => 
+                    <Button key={period} onClick={() => exportData('CSV', period)} variant="outline" size="sm">
                       <Download className="w-4 h-4 mr-1" />
                       {period.charAt(0).toUpperCase() + period.slice(1)} CSV
                     </Button>
-                    <Button onClick={() => exportData('JSON', period)} variant="outline" size="sm">
-                      <Download className="w-4 h-4 mr-1" />
-                      JSON
-                    </Button>
-                  </div>)}
+                )}
               </div>
             </div>
             
