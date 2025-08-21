@@ -79,7 +79,17 @@ const HeroSection = () => {
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground mb-6 leading-tight">
             <span className="text-primary">Stay Consistent.</span> Meet Your Deadlines.
             <br />
-            Write Smarter with <span className="text-primary">No Rush.</span>
+            <span className="flex items-center justify-center gap-3 flex-wrap">
+              Write Smarter with 
+              <span className="flex items-center gap-2">
+                <span className="text-primary">No Rush</span>
+                <img 
+                  src="/lovable-uploads/4227be48-8648-4d90-ab4c-175f6c77f066.png" 
+                  alt="No Rush logo" 
+                  className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16"
+                />
+              </span>
+            </span>
           </h1>
           
         <p className="text-base sm:text-lg text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
