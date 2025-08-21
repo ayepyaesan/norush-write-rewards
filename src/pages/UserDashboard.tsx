@@ -528,18 +528,6 @@ const UserDashboard = () => {
                 </CardContent>
               </Card>
 
-              <Card className="gradient-card border-0 shadow-warm">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-primary" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0}%
-                  </div>
-                  <p className="text-xs text-muted-foreground">Task completion rate</p>
-                </CardContent>
-              </Card>
             </div>
 
             <Card className="gradient-card border-0 shadow-warm">
