@@ -30,6 +30,7 @@ interface RefundEntry {
   target_date: string;
   words_written: number;
   required_words: number;
+  task_file_title: string | null;
 }
 
 const RefundMenu = () => {
@@ -150,7 +151,8 @@ const RefundMenu = () => {
           day_number: milestone?.day_number || 0,
           target_date: milestone?.target_date || '',
           words_written: wordsWritten,
-          required_words: requiredWords
+          required_words: requiredWords,
+          task_file_title: taskFile?.title || null
         };
       });
 
@@ -395,7 +397,10 @@ const RefundMenu = () => {
                          <div className="text-sm text-muted-foreground">
                            Day {refund.day_number} • {refund.task_status}
                          </div>
-                         {refund.task_name.includes('Task ID:') && (
+                         <div className="text-xs text-blue-600 mt-1">
+                           Task File: {refund.task_file_title || 'No file found'}
+                         </div>
+                         {refund.task_name.includes('Unknown Task') && (
                            <div className="text-xs text-orange-600 mt-1">
                              ⚠️ Task data missing
                            </div>
