@@ -327,7 +327,7 @@ export type Database = {
           created_at: string
           day_number: number
           id: string
-          processed_at: string | null
+          processed_at: string
           processed_by: string | null
           refund_amount: number
           refund_request_id: string
@@ -340,7 +340,7 @@ export type Database = {
           created_at?: string
           day_number: number
           id?: string
-          processed_at?: string | null
+          processed_at?: string
           processed_by?: string | null
           refund_amount: number
           refund_request_id: string
@@ -353,7 +353,7 @@ export type Database = {
           created_at?: string
           day_number?: number
           id?: string
-          processed_at?: string | null
+          processed_at?: string
           processed_by?: string | null
           refund_amount?: number
           refund_request_id?: string
@@ -362,7 +362,22 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_refund_history_refund_request"
+            columns: ["refund_request_id"]
+            isOneToOne: false
+            referencedRelation: "refund_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_refund_history_task"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       refund_requests: {
         Row: {
