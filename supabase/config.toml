@@ -88,3 +88,9 @@ verify_jwt = true
 
 [functions.daily-evaluation-scheduler]
 verify_jwt = false
+
+[functions.dictionary-validator]
+verify_jwt = true
+
+[functions.repetition-detector]
+verify_jwt = true

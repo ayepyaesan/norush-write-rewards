@@ -17,6 +17,7 @@ import TaskEditor from "./pages/TaskEditor";
 import TaskEditorPage from "./pages/TaskEditorPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import DailyTextEditor from "./pages/DailyTextEditor";
+import NoRushEditorPage from "./pages/NoRushEditorPage";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -86,6 +87,11 @@ const App = () => (
           <Route path="/daily-text-editor/:taskId" element={
             <ProtectedRoute requiredRole="user">
               <DailyTextEditor />
+            </ProtectedRoute>
+          } />
+          <Route path="/norush-editor/:taskId" element={
+            <ProtectedRoute requiredRole="user">
+              <NoRushEditorPage />
             </ProtectedRoute>
           } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
