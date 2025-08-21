@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import RefundRequestTracker from "@/components/RefundRequestTracker";
+import RefundHistory from "@/components/RefundHistory";
 
 interface UserProfile {
   id: string;
@@ -260,9 +261,10 @@ const UserDashboard = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="tasks">My Tasks</TabsTrigger>
             <TabsTrigger value="payments">Payments</TabsTrigger>
+            <TabsTrigger value="refunds">Refund History</TabsTrigger>
             <TabsTrigger value="reports">Reports</TabsTrigger>
           </TabsList>
 
@@ -487,6 +489,11 @@ const UserDashboard = () => {
                 </Card>
               )}
             </div>
+          </TabsContent>
+
+          {/* Refund History Tab */}
+          <TabsContent value="refunds" className="space-y-6">
+            {user && <RefundHistory userId={user.id} />}
           </TabsContent>
 
           {/* Reports Tab */}

@@ -190,6 +190,35 @@ const RefundMenu = () => {
     }
   };
 
+  const handleMarkReceived = async (refundId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { error } = await supabase.rpc('complete_refund', {
+        p_refund_request_id: refundId,
+        p_admin_user_id: user.id
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Refund marked as received and user balance updated",
+        variant: "default"
+      });
+
+      loadRefunds();
+    } catch (error) {
+      console.error('Error marking refund as received:', error);
+      toast({
+        title: "Error",
+        description: "Failed to mark refund as received",
+        variant: "destructive"
+      });
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       awaiting_review: { label: "Awaiting Review", className: "bg-yellow-100 text-yellow-800" },
@@ -393,7 +422,7 @@ const RefundMenu = () => {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleStatusUpdate(refund.id, 'completed')}
+                            onClick={() => handleMarkReceived(refund.id)}
                             className="bg-green-50 hover:bg-green-100 text-green-700"
                           >
                             Mark Received
