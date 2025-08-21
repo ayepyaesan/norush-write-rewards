@@ -414,7 +414,7 @@ export type Database = {
         Insert: {
           content?: string | null
           created_at?: string | null
-          day_number: number
+          day_number?: number
           id?: string
           task_id: string
           title?: string
@@ -433,15 +433,7 @@ export type Database = {
           user_id?: string
           word_count?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "task_files_task_id_fkey"
-            columns: ["task_id"]
-            isOneToOne: false
-            referencedRelation: "tasks"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       tasks: {
         Row: {
