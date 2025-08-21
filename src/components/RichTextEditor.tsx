@@ -25,26 +25,32 @@ interface RichTextEditorProps {
   content: string;
   onChange: (content: string) => void;
   onSave: () => void;
+  onSubmit?: () => void;
   isSaving?: boolean;
+  isSubmitting?: boolean;
   placeholder?: string;
   wordCount?: number;
   targetWords?: number;
   title?: string;
   milestoneId?: string;
   disablePaste?: boolean;
+  showSubmitButton?: boolean;
 }
 
 export const RichTextEditor = ({ 
   content, 
   onChange, 
   onSave, 
+  onSubmit,
   isSaving = false, 
+  isSubmitting = false,
   placeholder = "Start writing...",
   wordCount = 0,
   targetWords = 0,
   title = "Writing Editor",
   milestoneId,
-  disablePaste = true
+  disablePaste = true,
+  showSubmitButton = false
 }: RichTextEditorProps) => {
   const { toast } = useToast();
   // 24-hour countdown timer state - MUST be before early returns
@@ -151,14 +157,26 @@ export const RichTextEditor = ({
               <span className="font-medium">{wordCount}</span>
               {targetWords > 0 && <span> / {targetWords}</span>} words
             </div>
-            <Button 
-              onClick={onSave}
-              disabled={isSaving}
-              className="gradient-warm hover-lift"
-            >
-              <Save className="w-4 h-4 mr-2" />
-              {isSaving ? 'Saving...' : 'Save'}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button 
+                onClick={onSave}
+                disabled={isSaving}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Save className="w-4 h-4" />
+                {isSaving ? 'Saving...' : 'Save'}
+              </Button>
+              {showSubmitButton && onSubmit && (
+                <Button 
+                  onClick={onSubmit}
+                  disabled={isSubmitting || wordCount === 0}
+                  className="gradient-warm hover-lift flex items-center gap-2"
+                >
+                  {isSubmitting ? 'Validating...' : 'Submit for Review'}
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </CardHeader>

@@ -45,7 +45,9 @@ const DailyTextEditor = () => {
   const [activeDay, setActiveDay] = useState(1);
   const [currentContent, setCurrentContent] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   useEffect(() => {
     checkUserAndLoadTask();
@@ -271,6 +273,106 @@ const DailyTextEditor = () => {
     }
   };
 
+  const handleSubmit = async () => {
+    if (!user || !task || activeDay < 1 || !currentContent.trim()) {
+      toast({
+        title: "Error",
+        description: "Please write some content before submitting.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    setValidationErrors([]);
+
+    try {
+      // Get the current day file title
+      const activeFile = taskFiles.find(file => file.day_number === activeDay);
+      const title = activeFile?.title || `Day ${activeDay}`;
+
+      // Strip HTML and count words
+      const textContent = currentContent.replace(/<[^>]*>/g, '');
+      const wordCount = textContent.trim().split(/\s+/).filter(word => word.length > 0).length;
+      const targetWords = getDailyTarget();
+
+      console.log('Submitting for validation:', { title, wordCount, targetWords });
+
+      // Call validation edge function
+      const { data: validationResult, error } = await supabase.functions.invoke('ai-content-evaluator', {
+        body: {
+          content: textContent,
+          title,
+          userId: user.id,
+          taskId,
+          milestoneId: activeFile?.id, // Use file ID as milestone reference
+          targetWords,
+          action: 'validate'
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      console.log('Validation result:', validationResult);
+
+      if (!validationResult.isValid) {
+        // Show validation errors
+        setValidationErrors(validationResult.errors || ['Validation failed']);
+        toast({
+          title: "Submission Failed",
+          description: "Your text does not meet submission criteria. Please revise and try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // If validation passes, save the content first
+      await saveContent();
+
+      // Then create refund request
+      const { error: refundError } = await supabase
+        .from('refund_requests')
+        .insert({
+          user_id: user.id,
+          task_id: taskId,
+          milestone_id: activeFile?.id,
+          amount: Math.floor(task.deposit_amount / task.duration_days), // Daily refund amount
+          status: 'awaiting_review'
+        });
+
+      if (refundError) {
+        console.error('Error creating refund request:', refundError);
+        toast({
+          title: "Error",
+          description: "Failed to submit refund request. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Success
+      toast({
+        title: "Submission Successful!",
+        description: "Your refund request has been sent for review.",
+        variant: "default",
+      });
+
+      setValidationErrors([]);
+
+    } catch (error) {
+      console.error('Submit error:', error);
+      toast({
+        title: "Submit Error",
+        description: `Failed to submit content: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const getCurrentWordCount = () => {
     // Count words from HTML content (strip HTML tags first)
     const textContent = currentContent.replace(/<[^>]*>/g, '');
@@ -409,15 +511,30 @@ const DailyTextEditor = () => {
 
           {Array.from({ length: task.duration_days }, (_, i) => i + 1).map((day) => (
             <TabsContent key={day} value={day.toString()} className="space-y-6">
+              {/* Validation Errors Display */}
+              {validationErrors.length > 0 && (
+                <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+                  <h4 className="text-destructive font-medium mb-2">Submission Errors:</h4>
+                  <ul className="text-sm text-destructive space-y-1">
+                    {validationErrors.map((error, index) => (
+                      <li key={index}>• {error}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              
               <RichTextEditor
                 content={currentContent}
                 onChange={setCurrentContent}
                 onSave={saveContent}
+                onSubmit={handleSubmit}
                 isSaving={isSaving}
+                isSubmitting={isSubmitting}
                 placeholder={`Start writing for Day ${day} of "${task.task_name}"...`}
                 wordCount={getCurrentWordCount()}
                 targetWords={getDailyTarget()}
                 title={`Day ${day} - ${task.task_name}`}
+                showSubmitButton={true}
               />
             </TabsContent>
           ))}
