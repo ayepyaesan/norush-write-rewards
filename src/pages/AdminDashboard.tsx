@@ -127,39 +127,52 @@ const AdminDashboard = () => {
     if (profile?.role === 'admin') {
       loadAllData();
 
-      // Set up real-time subscriptions for instant updates
-      const profilesChannel = supabase.channel('profiles-changes').on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'profiles'
-      }, () => {
-        console.log('Profile change detected, refreshing stats...');
-        loadStats();
-        loadUsers();
-      }).subscribe();
-      const tasksChannel = supabase.channel('tasks-changes').on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'tasks'
-      }, () => {
-        console.log('Task change detected, refreshing stats...');
-        loadStats();
-        loadTasks();
-      }).subscribe();
-      const paymentsChannel = supabase.channel('payments-changes').on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'payments'
-      }, () => {
-        console.log('Payment change detected, refreshing stats...');
-        loadStats();
-        loadDeposits();
-      }).subscribe();
+      // Enhanced real-time subscriptions with better error handling
+      const profilesChannel = supabase
+        .channel('admin-profiles-changes')
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'profiles'
+        }, (payload) => {
+          console.log('👤 Profile change detected:', payload);
+          loadStats();
+          loadUsers();
+        })
+        .subscribe();
 
-      // Also keep polling as backup (every 60 seconds instead of 30)
+      const tasksChannel = supabase
+        .channel('admin-tasks-changes')
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'tasks'
+        }, (payload) => {
+          console.log('📝 Task change detected:', payload);
+          loadStats(); // This will refresh the active tasks count
+          loadTasks();
+        })
+        .subscribe();
+
+      const paymentsChannel = supabase
+        .channel('admin-payments-changes')
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'payments'
+        }, (payload) => {
+          console.log('💳 Payment change detected:', payload);
+          loadStats();
+          loadDeposits();
+        })
+        .subscribe();
+
+      // Backup polling for reliability
       const interval = setInterval(() => {
+        console.log('🔄 Periodic stats refresh...');
         loadAllData();
       }, 60000);
+
       return () => {
         clearInterval(interval);
         supabase.removeChannel(profilesChannel);
@@ -204,124 +217,104 @@ const AdminDashboard = () => {
   };
   const loadStats = async () => {
     try {
-      console.log('Loading real-time stats from Supabase...');
+      console.log('🔄 Loading comprehensive admin statistics...');
       const today = new Date().toISOString().split('T')[0];
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       const tomorrowStr = tomorrow.toISOString().split('T')[0];
 
-      // Get comprehensive statistics with proper error handling and debug logging
-      const queries = await Promise.allSettled([
-      // Query 0: Total users (all profiles with role 'user')
-      supabase.from('profiles').select('*', {
-        count: 'exact',
-        head: true
-      }).eq('role', 'user'),
-      // Query 1: Active users (users with access granted)
-      supabase.from('profiles').select('*', {
-        count: 'exact',
-        head: true
-      }).eq('role', 'user').eq('has_access', true),
-      // Query 2: All tasks
-      supabase.from('tasks').select('*', {
-        count: 'exact',
-        head: true
-      }),
-      // Query 3: Active tasks
-      supabase.from('tasks').select('*', {
-        count: 'exact',
-        head: true
-      }).eq('status', 'active'),
-      // Query 4: Completed tasks
-      supabase.from('tasks').select('*', {
-        count: 'exact',
-        head: true
-      }).eq('status', 'completed'),
-      // Query 5: Overdue tasks
-      supabase.from('tasks').select('*', {
-        count: 'exact',
-        head: true
-      }).eq('status', 'overdue'),
-      // Query 6: All payments
-      supabase.from('payments').select('*', {
-        count: 'exact',
-        head: true
-      }),
-      // Query 7: Pending payments
-      supabase.from('payments').select('*', {
-        count: 'exact',
-        head: true
-      }).eq('payment_status', 'pending'),
-      // Query 8: Verified payments
-      supabase.from('payments').select('*', {
-        count: 'exact',
-        head: true
-      }).eq('payment_status', 'verified'),
-      // Query 9: Rejected payments
-      supabase.from('payments').select('*', {
-        count: 'exact',
-        head: true
-      }).eq('payment_status', 'rejected'),
-      // Query 10: Tasks created today
-      supabase.from('tasks').select('*', {
-        count: 'exact',
-        head: true
-      }).gte('created_at', today).lt('created_at', tomorrowStr),
-      // Query 11: New users today
-      supabase.from('profiles').select('*', {
-        count: 'exact',
-        head: true
-      }).gte('created_at', today).lt('created_at', tomorrowStr).eq('role', 'user'),
-      // Query 12: Verified payment amounts for revenue calculation
-      supabase.from('payments').select('amount').eq('payment_status', 'verified'),
-      // Query 13: Refunds today (from refunds table)
-      supabase.from('refund_requests').select('*', {
-        count: 'exact',
-        head: true
-      }).gte('created_at', today).lt('created_at', tomorrowStr),
-      // Query 14: All refunds for total calculation
-      supabase.from('refund_requests').select('amount')]);
+      // Enhanced queries with better error handling
+      const [
+        totalUsersResult,
+        activeUsersResult,
+        totalTasksResult,
+        activeTasksResult,
+        completedTasksResult,
+        overdueTasksResult,
+        totalPaymentsResult,
+        pendingPaymentsResult,
+        verifiedPaymentsResult,
+        rejectedPaymentsResult,
+        tasksTodayResult,
+        newUsersTodayResult,
+        verifiedPaymentAmountsResult,
+        refundsTodayResult,
+        allRefundsResult
+      ] = await Promise.allSettled([
+        // Query 0: Total users
+        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'user'),
+        // Query 1: Active users
+        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'user').eq('has_access', true),
+        // Query 2: Total tasks
+        supabase.from('tasks').select('id', { count: 'exact', head: true }),
+        // Query 3: Active tasks - explicitly filter by active status
+        supabase.from('tasks').select('id', { count: 'exact', head: true }).eq('status', 'active'),
+        // Query 4: Completed tasks
+        supabase.from('tasks').select('id', { count: 'exact', head: true }).eq('status', 'completed'),
+        // Query 5: Overdue tasks
+        supabase.from('tasks').select('id', { count: 'exact', head: true }).eq('status', 'overdue'),
+        // Query 6: Total payments
+        supabase.from('payments').select('id', { count: 'exact', head: true }),
+        // Query 7: Pending payments
+        supabase.from('payments').select('id', { count: 'exact', head: true }).eq('payment_status', 'pending'),
+        // Query 8: Verified payments
+        supabase.from('payments').select('id', { count: 'exact', head: true }).eq('payment_status', 'verified'),
+        // Query 9: Rejected payments
+        supabase.from('payments').select('id', { count: 'exact', head: true }).eq('payment_status', 'rejected'),
+        // Query 10: Tasks created today
+        supabase.from('tasks').select('id', { count: 'exact', head: true }).gte('created_at', today).lt('created_at', tomorrowStr),
+        // Query 11: New users today
+        supabase.from('profiles').select('id', { count: 'exact', head: true }).gte('created_at', today).lt('created_at', tomorrowStr).eq('role', 'user'),
+        // Query 12: Verified payment amounts
+        supabase.from('payments').select('amount').eq('payment_status', 'verified'),
+        // Query 13: Refunds today
+        supabase.from('refund_requests').select('id', { count: 'exact', head: true }).gte('created_at', today).lt('created_at', tomorrowStr),
+        // Query 14: All refunds
+        supabase.from('refund_requests').select('amount')
+      ]);
 
-      // Debug logging for each query result
-      queries.forEach((result, index) => {
-        if (result.status === 'fulfilled') {
-          console.log(`Query ${index} successful:`, result.value.count ?? result.value.data?.length ?? 'No count');
-        } else {
-          console.error(`Query ${index} failed:`, result.reason);
-        }
+      // Enhanced logging for debugging
+      console.log('📊 Query Results:', {
+        totalUsers: totalUsersResult.status === 'fulfilled' ? totalUsersResult.value.count : 'Failed',
+        activeUsers: activeUsersResult.status === 'fulfilled' ? activeUsersResult.value.count : 'Failed',
+        totalTasks: totalTasksResult.status === 'fulfilled' ? totalTasksResult.value.count : 'Failed',
+        activeTasks: activeTasksResult.status === 'fulfilled' ? activeTasksResult.value.count : 'Failed',
+        completedTasks: completedTasksResult.status === 'fulfilled' ? completedTasksResult.value.count : 'Failed',
+        overdueTasks: overdueTasksResult.status === 'fulfilled' ? overdueTasksResult.value.count : 'Failed'
       });
 
-      // Extract counts safely with proper error checking
-      const totalUsersCount = queries[0].status === 'fulfilled' ? queries[0].value.count ?? 0 : 0;
-      const activeUsersCount = queries[1].status === 'fulfilled' ? queries[1].value.count ?? 0 : 0;
-      const totalTasksCount = queries[2].status === 'fulfilled' ? queries[2].value.count ?? 0 : 0;
-      const activeTasksCount = queries[3].status === 'fulfilled' ? queries[3].value.count ?? 0 : 0;
-      const completedTasksCount = queries[4].status === 'fulfilled' ? queries[4].value.count ?? 0 : 0;
-      const overdueTasksCount = queries[5].status === 'fulfilled' ? queries[5].value.count ?? 0 : 0;
-      const totalPaymentsCount = queries[6].status === 'fulfilled' ? queries[6].value.count ?? 0 : 0;
-      const pendingPaymentsCount = queries[7].status === 'fulfilled' ? queries[7].value.count ?? 0 : 0;
-      const verifiedPaymentsCount = queries[8].status === 'fulfilled' ? queries[8].value.count ?? 0 : 0;
-      const rejectedPaymentsCount = queries[9].status === 'fulfilled' ? queries[9].value.count ?? 0 : 0;
-      const tasksTodayCount = queries[10].status === 'fulfilled' ? queries[10].value.count ?? 0 : 0;
-      const newUsersTodayCount = queries[11].status === 'fulfilled' ? queries[11].value.count ?? 0 : 0;
-      const revenueData = queries[12].status === 'fulfilled' ? queries[12].value.data ?? [] : [];
-      const refundsTodayCount = queries[13].status === 'fulfilled' ? queries[13].value.count ?? 0 : 0;
-      const refundsData = queries[14].status === 'fulfilled' ? queries[14].value.data ?? [] : [];
+      // Extract counts with proper null handling
+      const totalUsersCount = totalUsersResult.status === 'fulfilled' ? (totalUsersResult.value.count ?? 0) : 0;
+      const activeUsersCount = activeUsersResult.status === 'fulfilled' ? (activeUsersResult.value.count ?? 0) : 0;
+      const totalTasksCount = totalTasksResult.status === 'fulfilled' ? (totalTasksResult.value.count ?? 0) : 0;
+      const activeTasksCount = activeTasksResult.status === 'fulfilled' ? (activeTasksResult.value.count ?? 0) : 0;
+      const completedTasksCount = completedTasksResult.status === 'fulfilled' ? (completedTasksResult.value.count ?? 0) : 0;
+      const overdueTasksCount = overdueTasksResult.status === 'fulfilled' ? (overdueTasksResult.value.count ?? 0) : 0;
+      const totalPaymentsCount = totalPaymentsResult.status === 'fulfilled' ? (totalPaymentsResult.value.count ?? 0) : 0;
+      const pendingPaymentsCount = pendingPaymentsResult.status === 'fulfilled' ? (pendingPaymentsResult.value.count ?? 0) : 0;
+      const verifiedPaymentsCount = verifiedPaymentsResult.status === 'fulfilled' ? (verifiedPaymentsResult.value.count ?? 0) : 0;
+      const rejectedPaymentsCount = rejectedPaymentsResult.status === 'fulfilled' ? (rejectedPaymentsResult.value.count ?? 0) : 0;
+      const tasksTodayCount = tasksTodayResult.status === 'fulfilled' ? (tasksTodayResult.value.count ?? 0) : 0;
+      const newUsersTodayCount = newUsersTodayResult.status === 'fulfilled' ? (newUsersTodayResult.value.count ?? 0) : 0;
+      const revenueData = verifiedPaymentAmountsResult.status === 'fulfilled' ? (verifiedPaymentAmountsResult.value.data ?? []) : [];
+      const refundsTodayCount = refundsTodayResult.status === 'fulfilled' ? (refundsTodayResult.value.count ?? 0) : 0;
+      const refundsData = allRefundsResult.status === 'fulfilled' ? (allRefundsResult.value.data ?? []) : [];
 
-      // Calculate totals
+      // Calculate financial metrics
       const totalRevenue = revenueData.reduce((sum, payment) => sum + (payment.amount || 0), 0);
       const totalRefunds = refundsData.reduce((sum, refund) => sum + (refund.amount || 0), 0);
       const netProfit = totalRevenue - totalRefunds;
-      const avgCompletion = totalTasksCount > 0 ? Math.round(completedTasksCount / totalTasksCount * 100) : 0;
+      const avgCompletion = totalTasksCount > 0 ? Math.round((completedTasksCount / totalTasksCount) * 100) : 0;
+
       const newStats = {
         totalUsers: totalUsersCount,
         activeUsers: activeUsersCount,
         totalTasks: totalTasksCount,
-        activeTasks: activeTasksCount,
+        activeTasks: activeTasksCount, // This should now correctly show active tasks from all users
         completedTasks: completedTasksCount,
         overdueTasks: overdueTasksCount,
         totalPayments: totalPaymentsCount,
-        totalRevenue: totalRevenue,
+        totalRevenue,
         pendingPayments: pendingPaymentsCount,
         verifiedPayments: verifiedPaymentsCount,
         rejectedPayments: rejectedPaymentsCount,
@@ -336,25 +329,18 @@ const AdminDashboard = () => {
         lastSyncError: null
       };
 
-      // Enhanced debug logging
-      console.log('🔄 Real-time stats loaded successfully:', newStats);
-      console.log('📊 Database sync verification:', {
-        usersQuery: `profiles table with role='user': ${totalUsersCount}`,
-        tasksQuery: `tasks table total: ${totalTasksCount}`,
-        paymentsQuery: `payments table total: ${totalPaymentsCount}`,
-        revenueQuery: `verified payments sum: ${totalRevenue} MMK`,
-        timestamp: new Date().toISOString()
-      });
+      console.log('✅ Updated stats loaded successfully:', newStats);
+      console.log(`🎯 Active Tasks Count: ${activeTasksCount} (from all platform users)`);
+      
       setStats(newStats);
     } catch (error) {
-      console.error('❌ Error loading real-time stats:', error);
+      console.error('❌ Error loading admin statistics:', error);
       toast({
-        title: "⚠️ Data Fetch Error",
-        description: "Failed to load real-time statistics from database",
+        title: "⚠️ Data Loading Error",
+        description: "Failed to load admin statistics",
         variant: "destructive"
       });
 
-      // Set error state to show data fetch problems
       setStats(prev => ({
         ...prev,
         error: true,
@@ -921,59 +907,71 @@ const AdminDashboard = () => {
         {activeTab === "dashboard" && <div className="space-y-6">
             {/* Enhanced Stats Grid with Real-time Indicators */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[{
-            title: "Total Users",
-            value: stats.error ? "⚠️ Error" : stats.totalUsers,
-            change: stats.error ? "Data fetch failed" : `+${stats.newUsersToday} today`,
-            icon: Users,
-            color: stats.error ? "red" : "sky",
-            realTime: true,
-            lastSync: stats.lastSynced
-          }, {
-            title: "Active Tasks",
-            value: stats.error ? "⚠️ Error" : stats.activeTasks,
-            change: stats.error ? "Data fetch failed" : `${stats.avgTaskCompletion}% completion`,
-            icon: Target,
-            color: stats.error ? "red" : "mint",
-            realTime: true,
-            lastSync: stats.lastSynced
-          }, {
-            title: "Total Revenue",
-            value: stats.error ? "⚠️ Error" : `${stats.totalRevenue.toLocaleString()} MMK`,
-            change: stats.error ? "Data fetch failed" : `${stats.totalProfit.toLocaleString()} MMK profit`,
-            icon: DollarSign,
-            color: stats.error ? "red" : "green",
-            realTime: true,
-            lastSync: stats.lastSynced
-          }, {
-            title: "Pending Payments",
-            value: stats.error ? "⚠️ Error" : stats.pendingPayments,
-            change: stats.error ? "Data fetch failed" : "Needs review",
-            icon: AlertTriangle,
-            color: stats.error ? "red" : "yellow",
-            realTime: true,
-            lastSync: stats.lastSynced
-          }].map((stat, index) => <Card key={index} className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'} shadow-lg hover:shadow-xl transition-shadow relative`}>
+              {[
+                {
+                  title: "Total Users",
+                  value: stats.error ? "⚠️ Error" : stats.totalUsers,
+                  change: stats.error ? "Data fetch failed" : `+${stats.newUsersToday} today`,
+                  icon: Users,
+                  color: stats.error ? "red" : "sky",
+                  realTime: true,
+                  lastSync: stats.lastSynced
+                },
+                {
+                  title: "Active Tasks",
+                  value: stats.error ? "⚠️ Error" : stats.activeTasks,
+                  change: stats.error ? "Data fetch failed" : `${stats.avgTaskCompletion}% completion`,
+                  icon: Target,
+                  color: stats.error ? "red" : "mint",
+                  realTime: true,
+                  lastSync: stats.lastSynced
+                },
+                {
+                  title: "Total Revenue",
+                  value: stats.error ? "⚠️ Error" : `${stats.totalRevenue.toLocaleString()} MMK`,
+                  change: stats.error ? "Data fetch failed" : `${stats.totalProfit.toLocaleString()} MMK profit`,
+                  icon: DollarSign,
+                  color: stats.error ? "red" : "green",
+                  realTime: true,
+                  lastSync: stats.lastSynced
+                },
+                {
+                  title: "Pending Payments",
+                  value: stats.error ? "⚠️ Error" : stats.pendingPayments,
+                  change: stats.error ? "Data fetch failed" : "Needs review",
+                  icon: AlertTriangle,
+                  color: stats.error ? "red" : "yellow",
+                  realTime: true,
+                  lastSync: stats.lastSynced
+                }
+              ].map((stat, index) => (
+                <Card key={index} className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'} shadow-lg hover:shadow-xl transition-shadow relative`}>
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="flex items-center gap-2">
                           <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{stat.title}</p>
-                          {stat.realTime && <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${stats.error ? 'bg-red-500' : 'bg-green-500'}`}></div>}
+                          {stat.realTime && (
+                            <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${stats.error ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                          )}
                         </div>
                         <p className="text-2xl font-bold">{stat.value}</p>
                         <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'} mt-1`}>{stat.change}</p>
-                        {stat.lastSync && !stats.error && <p className={`text-xs ${darkMode ? 'text-gray-600' : 'text-gray-400'} mt-1`}>
+                        {stat.lastSync && !stats.error && (
+                          <p className={`text-xs ${darkMode ? 'text-gray-600' : 'text-gray-400'} mt-1`}>
                             Last synced: {new Date(stat.lastSync).toLocaleTimeString()}
-                          </p>}
-                        {stats.error && <p className="text-xs text-red-500 mt-1">
+                          </p>
+                        )}
+                        {stats.error && (
+                          <p className="text-xs text-red-500 mt-1">
                             Database connection error
-                          </p>}
+                          </p>
+                        )}
                       </div>
-                      
                     </div>
                   </CardContent>
-                </Card>)}
+                </Card>
+              ))}
             </div>
 
             {/* Analytics Cards */}
@@ -1304,27 +1302,32 @@ const AdminDashboard = () => {
 
             {/* Task Statistics */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {[{
-            title: "Total Tasks",
-            value: stats.totalTasks,
-            icon: FileText,
-            color: "blue"
-          }, {
-            title: "Active",
-            value: stats.activeTasks,
-            icon: Activity,
-            color: "green"
-          }, {
-            title: "Completed",
-            value: stats.completedTasks,
-            icon: CheckCircle,
-            color: "emerald"
-          }, {
-            title: "Overdue",
-            value: stats.overdueTasks,
-            icon: AlertTriangle,
-            color: "red"
-          }].map((stat, index) => <Card key={index} className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'} shadow-md`}>
+              {[
+                {
+                  title: "Total Tasks",
+                  value: stats.totalTasks,
+                  icon: FileText,
+                  color: "blue"
+                },
+                {
+                  title: "Active",
+                  value: stats.activeTasks,
+                  icon: Activity,
+                  color: "green"
+                },
+                {
+                  title: "Completed",
+                  value: stats.completedTasks,
+                  icon: CheckCircle,
+                  color: "emerald"
+                },
+                {
+                  title: "Overdue",
+                  value: stats.overdueTasks,
+                  icon: AlertTriangle,
+                  color: "red"
+                }
+              ].map((stat, index) => <Card key={index} className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'} shadow-md`}>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
@@ -1521,47 +1524,56 @@ const AdminDashboard = () => {
             
             {/* Real-Time Statistics Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              {[{
-            title: "Total Users",
-            value: stats.error ? "⚠️ Error" : stats.totalUsers,
-            icon: Users,
-            color: stats.error ? "red" : "blue"
-          }, {
-            title: "Active Tasks",
-            value: stats.error ? "⚠️ Error" : stats.activeTasks,
-            icon: Activity,
-            color: stats.error ? "red" : "green"
-          }, {
-            title: "Completed Tasks",
-            value: stats.error ? "⚠️ Error" : stats.completedTasks,
-            icon: CheckCircle,
-            color: stats.error ? "red" : "emerald"
-          }, {
-            title: "Total Payments",
-            value: stats.error ? "⚠️ Error" : stats.totalPayments,
-            icon: CreditCard,
-            color: stats.error ? "red" : "purple"
-          }, {
-            title: "Pending Deposits",
-            value: stats.error ? "⚠️ Error" : stats.pendingPayments,
-            icon: Clock,
-            color: stats.error ? "red" : "yellow"
-          }, {
-            title: "Refunds Issued",
-            value: stats.error ? "⚠️ Error" : stats.refundsToday,
-            icon: ArrowDownLeft,
-            color: stats.error ? "red" : "orange"
-          }, {
-            title: "Tasks Today",
-            value: stats.error ? "⚠️ Error" : stats.tasksToday,
-            icon: Calendar,
-            color: stats.error ? "red" : "indigo"
-          }, {
-            title: "New Users Today",
-            value: stats.error ? "⚠️ Error" : stats.newUsersToday,
-            icon: UserCheck,
-            color: stats.error ? "red" : "cyan"
-          }].map((stat, index) => <Card key={index} className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'} shadow-md hover:shadow-lg transition-shadow`}>
+              {[
+                {
+                  title: "Total Users",
+                  value: stats.error ? "⚠️ Error" : stats.totalUsers,
+                  icon: Users,
+                  color: stats.error ? "red" : "blue"
+                },
+                {
+                  title: "Active Tasks",
+                  value: stats.error ? "⚠️ Error" : stats.activeTasks,
+                  icon: Activity,
+                  color: stats.error ? "red" : "green"
+                },
+                {
+                  title: "Completed Tasks",
+                  value: stats.error ? "⚠️ Error" : stats.completedTasks,
+                  icon: CheckCircle,
+                  color: stats.error ? "red" : "emerald"
+                },
+                {
+                  title: "Total Payments",
+                  value: stats.error ? "⚠️ Error" : stats.totalPayments,
+                  icon: CreditCard,
+                  color: stats.error ? "red" : "purple"
+                },
+                {
+                  title: "Pending Deposits",
+                  value: stats.error ? "⚠️ Error" : stats.pendingPayments,
+                  icon: Clock,
+                  color: stats.error ? "red" : "yellow"
+                },
+                {
+                  title: "Refunds Issued",
+                  value: stats.error ? "⚠️ Error" : stats.refundsToday,
+                  icon: ArrowDownLeft,
+                  color: stats.error ? "red" : "orange"
+                },
+                {
+                  title: "Tasks Today",
+                  value: stats.error ? "⚠️ Error" : stats.tasksToday,
+                  icon: Calendar,
+                  color: stats.error ? "red" : "indigo"
+                },
+                {
+                  title: "New Users Today",
+                  value: stats.error ? "⚠️ Error" : stats.newUsersToday,
+                  icon: UserCheck,
+                  color: stats.error ? "red" : "cyan"
+                }
+              ].map((stat, index) => <Card key={index} className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'} shadow-md hover:shadow-lg transition-shadow`}>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
@@ -1613,27 +1625,32 @@ const AdminDashboard = () => {
                   <CardDescription>Real-time business metrics</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {[{
-                label: "Active Users",
-                value: stats.error ? "Error" : stats.activeUsers,
-                icon: UserCheck,
-                color: "green"
-              }, {
-                label: "Task Completion Rate",
-                value: stats.error ? "Error" : `${stats.avgTaskCompletion}%`,
-                icon: Target,
-                color: "blue"
-              }, {
-                label: "Payment Success Rate",
-                value: stats.error ? "Error" : `${Math.round(stats.verifiedPayments / (stats.totalPayments || 1) * 100)}%`,
-                icon: CheckCircle,
-                color: "emerald"
-              }, {
-                label: "Daily Revenue",
-                value: stats.error ? "Error" : `${Math.round(stats.totalRevenue / 30).toLocaleString()} MMK`,
-                icon: TrendingUp,
-                color: "purple"
-              }].map((metric, index) => <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  {[
+                    {
+                      label: "Active Users",
+                      value: stats.error ? "Error" : stats.activeUsers,
+                      icon: UserCheck,
+                      color: "green"
+                    },
+                    {
+                      label: "Task Completion Rate",
+                      value: stats.error ? "Error" : `${stats.avgTaskCompletion}%`,
+                      icon: Target,
+                      color: "blue"
+                    },
+                    {
+                      label: "Payment Success Rate",
+                      value: stats.error ? "Error" : `${Math.round(stats.verifiedPayments / (stats.totalPayments || 1) * 100)}%`,
+                      icon: CheckCircle,
+                      color: "emerald"
+                    },
+                    {
+                      label: "Daily Revenue",
+                      value: stats.error ? "Error" : `${Math.round(stats.totalRevenue / 30).toLocaleString()} MMK`,
+                      icon: TrendingUp,
+                      color: "purple"
+                    }
+                  ].map((metric, index) => <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                       <div className="flex items-center gap-3">
                         <metric.icon className={`w-5 h-5 text-${metric.color}-500`} />
                         <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{metric.label}</span>
@@ -1652,25 +1669,30 @@ const AdminDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {[{
-                  label: "Total Payments",
-                  value: stats.totalPayments,
-                  color: "blue"
-                }, {
-                  label: "Verified",
-                  value: stats.verifiedPayments,
-                  color: "green"
-                }, {
-                  label: "Pending",
-                  value: stats.pendingPayments,
-                  color: "yellow"
-                }, {
-                  label: "Rejected",
-                  value: stats.rejectedPayments,
-                  color: "red"
-                }].map((item, index) => <div key={index} className="flex justify-between items-center">
+                    {[
+                      {
+                        label: "Total Payments",
+                        value: stats.totalPayments,
+                        color: "blue"
+                      },
+                      {
+                        label: "Verified",
+                        value: stats.verifiedPayments,
+                        color: "green"
+                      },
+                      {
+                        label: "Pending",
+                        value: stats.pendingPayments,
+                        color: "yellow"
+                      },
+                      {
+                        label: "Rejected",
+                        value: stats.rejectedPayments,
+                        color: "red"
+                      }
+                    ].map((item, index) => <div key={index} className="flex justify-between items-center">
                         <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{item.label}</span>
-                        <Badge className={getStatusColor(item.color === 'green' ? 'verified' : item.color === 'yellow' ? 'pending' : item.color === 'red' ? 'rejected' : 'active')}>
+                        <Badge className={getStatusColor(item.color === 'green' ? 'verified' : item.color === 'yellow' ? 'pending' : item.color === 'red' ? 'rejected' : 'active'}>
                           {item.value}
                         </Badge>
                       </div>)}
@@ -1684,19 +1706,24 @@ const AdminDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {[{
-                  label: "Total Users",
-                  value: stats.totalUsers
-                }, {
-                  label: "Active Users",
-                  value: stats.activeUsers
-                }, {
-                  label: "New Today",
-                  value: stats.newUsersToday
-                }, {
-                  label: "Top Performers",
-                  value: stats.topPerformers
-                }].map((item, index) => <div key={index} className="flex justify-between">
+                    {[
+                      {
+                        label: "Total Users",
+                        value: stats.totalUsers
+                      },
+                      {
+                        label: "Active Users",
+                        value: stats.activeUsers
+                      },
+                      {
+                        label: "New Today",
+                        value: stats.newUsersToday
+                      },
+                      {
+                        label: "Top Performers",
+                        value: stats.topPerformers
+                      }
+                    ].map((item, index) => <div key={index} className="flex justify-between">
                         <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{item.label}</span>
                         <span className="font-semibold">{item.value}</span>
                       </div>)}
@@ -1798,7 +1825,8 @@ const AdminDashboard = () => {
                 </div>
               </CardContent>
             </Card>
-          </div>}
+          </div>
+        </div>
       </div>
     </div>;
 };
