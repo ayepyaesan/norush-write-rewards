@@ -72,21 +72,17 @@ const RefundMenu = () => {
       setLoading(true);
       
       // Step 1: Fetch refund requests
-      console.log('🔍 DEBUGGING: Fetching refund requests...');
       const { data: refundRequests, error: refundError } = await supabase
         .from('refund_requests')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (refundError) {
-        console.error('❌ Refund requests error:', refundError);
+        console.error('Refund requests error:', refundError);
         throw new Error(`Failed to fetch refund requests: ${refundError.message}`);
       }
 
-      console.log('✅ Refund requests fetched:', refundRequests?.length || 0, 'records');
-      
       if (!refundRequests || refundRequests.length === 0) {
-        console.log('⚠️ No refund requests found');
         setRefunds([]);
         return;
       }
@@ -96,15 +92,7 @@ const RefundMenu = () => {
       const taskIds = [...new Set(refundRequests.map(r => r.task_id))];
       const milestoneIds = [...new Set(refundRequests.map(r => r.milestone_id))];
 
-      console.log('🔍 DEBUGGING: Extracted IDs:', {
-        userIds: userIds.length,
-        taskIds: taskIds.length,
-        milestoneIds: milestoneIds.length,
-        sampleTaskIds: taskIds.slice(0, 3)
-      });
-
       // Step 3: Fetch related data in parallel
-      console.log('🔍 DEBUGGING: Fetching related data...');
       const [
         { data: profiles, error: profileError },
         { data: tasks, error: taskError },
@@ -117,35 +105,11 @@ const RefundMenu = () => {
         supabase.from('task_files').select('*').in('task_id', taskIds)
       ]);
 
-      // Check for errors and log detailed debugging info
-      if (profileError) {
-        console.error('❌ Profile fetch error:', profileError);
-      } else {
-        console.log('✅ Profiles fetched:', profiles?.length || 0, 'records');
-      }
-
-      if (taskError) {
-        console.error('❌ Task fetch error:', taskError);
-      } else {
-        console.log('✅ Tasks fetched:', tasks?.length || 0, 'records');
-        console.log('🔍 DEBUGGING: Sample tasks:', tasks?.slice(0, 2).map(t => ({ 
-          id: t.id, 
-          task_name: t.task_name,
-          user_id: t.user_id 
-        })));
-      }
-
-      if (milestoneError) {
-        console.error('❌ Milestone fetch error:', milestoneError);
-      } else {
-        console.log('✅ Milestones fetched:', milestones?.length || 0, 'records');
-      }
-
-      if (fileError) {
-        console.error('❌ Task file fetch error:', fileError);
-      } else {
-        console.log('✅ Task files fetched:', taskFiles?.length || 0, 'records');
-      }
+      // Check for errors but don't fail completely
+      if (profileError) console.warn('Profile fetch error:', profileError);
+      if (taskError) console.warn('Task fetch error:', taskError);
+      if (milestoneError) console.warn('Milestone fetch error:', milestoneError);
+      if (fileError) console.warn('Task file fetch error:', fileError);
 
       // Step 4: Create lookup maps for efficient data joining
       const profileMap = new Map((profiles || []).map(p => [p.user_id, p]));
@@ -153,37 +117,12 @@ const RefundMenu = () => {
       const milestoneMap = new Map((milestones || []).map(m => [m.id, m]));
       const fileMap = new Map((taskFiles || []).map(f => [f.task_id, f]));
 
-      console.log('🔍 DEBUGGING: Lookup maps created:', {
-        profileMapSize: profileMap.size,
-        taskMapSize: taskMap.size,
-        milestoneMapSize: milestoneMap.size,
-        fileMapSize: fileMap.size
-      });
-
-      // Step 5: Transform data with comprehensive error handling and debugging
-      console.log('🔍 DEBUGGING: Transforming refund data...');
-      let taskNameMisses = 0;
-      let taskNameHits = 0;
-
-      const refundsWithDetails: RefundEntry[] = refundRequests.map((refund, index) => {
+      // Step 5: Transform data with comprehensive error handling
+      const refundsWithDetails: RefundEntry[] = refundRequests.map(refund => {
         const profile = profileMap.get(refund.user_id);
         const task = taskMap.get(refund.task_id);
         const milestone = milestoneMap.get(refund.milestone_id);
         const taskFile = fileMap.get(refund.task_id);
-        
-        // Debug task lookup specifically
-        if (task?.task_name) {
-          taskNameHits++;
-        } else {
-          taskNameMisses++;
-          console.warn(`❌ Missing task for refund ${index + 1}:`, {
-            refundId: refund.id,
-            taskId: refund.task_id,
-            taskFound: !!task,
-            taskData: task,
-            allTaskIds: Array.from(taskMap.keys()).slice(0, 5)
-          });
-        }
         
         // Calculate task status with null safety
         const wordsWritten = milestone?.words_written || taskFile?.word_count || 0;
@@ -201,7 +140,7 @@ const RefundMenu = () => {
           processed_at: refund.processed_at,
           admin_notes: refund.admin_notes,
           user_name: profile?.full_name || `Unknown User (${refund.user_id?.slice(0, 8)}...)`,
-          task_name: task?.task_name || `❌ Task Not Found (${refund.task_id?.slice(0, 8)}...)`,
+          task_name: task?.task_name || `Task ID: ${refund.task_id?.slice(0, 8)}...`,
           task_status: taskStatus,
           kpay_name: profile?.kpay_name || null,
           kpay_phone: profile?.kpay_phone || null,
@@ -213,16 +152,9 @@ const RefundMenu = () => {
         };
       });
 
-      console.log('📊 DEBUGGING: Transformation complete:', {
-        totalRefunds: refundsWithDetails.length,
-        taskNameHits,
-        taskNameMisses,
-        successRate: `${Math.round((taskNameHits / refundsWithDetails.length) * 100)}%`
-      });
-
       setRefunds(refundsWithDetails);
     } catch (error) {
-      console.error('💥 Error loading refunds:', error);
+      console.error('Error loading refunds:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to load refund data';
       toast({
         title: "Database Error",
@@ -380,34 +312,6 @@ const RefundMenu = () => {
           </Badge>
         </div>
       </div>
-
-      {/* Debug Panel */}
-      {process.env.NODE_ENV === 'development' && (
-        <Card className="border-orange-200 bg-orange-50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-orange-800">🔧 Debug Information</CardTitle>
-          </CardHeader>
-          <CardContent className="text-xs text-orange-700">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div>
-                <strong>Total Refunds:</strong> {refunds.length}
-              </div>
-              <div>
-                <strong>Task Names Found:</strong> {refunds.filter(r => !r.task_name.includes('❌')).length}
-              </div>
-              <div>
-                <strong>Missing Task Names:</strong> {refunds.filter(r => r.task_name.includes('❌')).length}
-              </div>
-              <div>
-                <strong>Success Rate:</strong> {refunds.length > 0 ? Math.round((refunds.filter(r => !r.task_name.includes('❌')).length / refunds.length) * 100) : 0}%
-              </div>
-            </div>
-            <div className="mt-2 text-xs">
-              Check console for detailed debugging logs
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Filters */}
       <Card>
