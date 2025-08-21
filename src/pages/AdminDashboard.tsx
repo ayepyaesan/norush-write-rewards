@@ -671,6 +671,21 @@ const AdminDashboard = () => {
       }
 
       // Log admin creation activity
+      if (authData.user) {
+        await supabase
+          .from('admin_activity_log')
+          .insert({
+            admin_user_id: user?.id,
+            action: 'admin_created',
+            target_user_id: authData.user.id,
+            details: {
+              admin_email: newAdminData.email,
+              admin_name: newAdminData.fullName,
+              created_by: profile?.full_name
+            }
+          });
+      }
+
       console.log(`Admin account created by ${profile?.full_name} for ${newAdminData.email}`);
 
       toast({
