@@ -146,13 +146,12 @@ const CombinedDashboard = () => {
         });
       } else {
         setTasks(tasksData || []);
-        // Auto-select the first paid task
-        const paidTask = tasksData?.find(task => 
-          task.payments?.[0]?.payment_status === 'verified' || 
-          task.payments?.[0]?.screenshot_url
+        // Auto-select the first verified task
+        const verifiedTask = tasksData?.find(task => 
+          task.payments?.[0]?.payment_status === 'verified'
         );
-        if (paidTask) {
-          setSelectedTask(paidTask);
+        if (verifiedTask) {
+          setSelectedTask(verifiedTask);
         }
       }
     } catch (error) {
@@ -260,16 +259,16 @@ const CombinedDashboard = () => {
   const getTaskStatusColor = (task: Task) => {
     const payment = task.payments?.[0];
     if (!payment) return "text-yellow-600";
-    if (payment.screenshot_url && payment.payment_status === 'pending') return "text-orange-600";
     if (payment.payment_status === 'verified') return "text-green-600";
+    if (payment.screenshot_url && payment.payment_status === 'pending') return "text-orange-600";
     return "text-red-600";
   };
 
   const getTaskStatusText = (task: Task) => {
     const payment = task.payments?.[0];
-    if (!payment) return "Payment Pending";
-    if (payment.screenshot_url && payment.payment_status === 'pending') return "Verification Pending";
+    if (!payment) return "Payment Required";
     if (payment.payment_status === 'verified') return "Active";
+    if (payment.screenshot_url && payment.payment_status === 'pending') return "Verification Pending";
     return "Payment Required";
   };
 
@@ -435,24 +434,46 @@ const CombinedDashboard = () => {
                   <CardContent className="flex-1 flex flex-col">
                     {selectedTask ? (
                       <>
-                        <Textarea
-                          value={writingText}
-                          onChange={(e) => setWritingText(e.target.value)}
-                          placeholder="Start writing your content here..."
-                          className="flex-1 resize-none min-h-[400px] text-base leading-relaxed"
-                        />
-                        <div className="flex items-center justify-between pt-4 border-t">
-                          <div className="text-sm text-muted-foreground">
-                            Words: {writingText.trim().split(/\s+/).filter(word => word.length > 0).length} / {selectedTask.word_count?.toLocaleString()}
+                        {/* Show writing interface only if payment is verified */}
+                        {selectedTask.payments?.[0]?.payment_status === 'verified' ? (
+                          <>
+                            <Textarea
+                              value={writingText}
+                              onChange={(e) => setWritingText(e.target.value)}
+                              placeholder="Start writing your content here..."
+                              className="flex-1 resize-none min-h-[400px] text-base leading-relaxed"
+                            />
+                            <div className="flex items-center justify-between pt-4 border-t">
+                              <div className="text-sm text-muted-foreground">
+                                Words: {writingText.trim().split(/\s+/).filter(word => word.length > 0).length} / {selectedTask.word_count?.toLocaleString()}
+                              </div>
+                              <Button 
+                                onClick={handleSaveText} 
+                                className="gradient-warm hover-lift"
+                                disabled={isSaving}
+                              >
+                                {isSaving ? "Saving..." : "Save Progress"}
+                              </Button>
+                            </div>
+                          </>
+                        ) : (
+                          // Show payment required message
+                          <div className="flex-1 flex items-center justify-center text-center">
+                            <div>
+                              <CreditCard className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                              <h3 className="text-lg font-medium mb-2">Payment Required</h3>
+                              <p className="text-muted-foreground mb-4">
+                                Please complete payment to start writing for this task.
+                              </p>
+                              <Button 
+                                onClick={() => navigate(`/task/${selectedTask.id}`)}
+                                className="gradient-warm hover-lift"
+                              >
+                                Make Payment
+                              </Button>
+                            </div>
                           </div>
-                          <Button 
-                            onClick={handleSaveText} 
-                            className="gradient-warm hover-lift"
-                            disabled={isSaving}
-                          >
-                            {isSaving ? "Saving..." : "Save Progress"}
-                          </Button>
-                        </div>
+                        )}
                       </>
                     ) : (
                       <div className="flex-1 flex items-center justify-center text-center">
