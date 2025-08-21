@@ -885,10 +885,6 @@ const AdminDashboard = () => {
             icon: Users,
             label: "Users"
           }, {
-            id: "tasks",
-            icon: FileText,
-            label: "Tasks"
-          }, {
             id: "deposits",
             icon: CreditCard,
             label: "Payments"
@@ -1380,91 +1376,6 @@ const AdminDashboard = () => {
             </Card>
           </div>}
 
-        {/* Enhanced Tasks Tab */}
-        {activeTab === "tasks" && <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <h3 className="text-lg font-semibold">Task Management</h3>
-                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                  Monitor and manage all user tasks
-                </p>
-              </div>
-              <Button onClick={() => exportData('Tasks')} variant="outline">
-                <Download className="w-4 h-4 mr-2" />
-                Export Tasks
-              </Button>
-            </div>
-
-            {/* Task Statistics */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {[{
-            title: "Total Tasks",
-            value: stats.totalTasks,
-            icon: FileText,
-            color: "blue"
-          }, {
-            title: "Active",
-            value: stats.activeTasks,
-            icon: Activity,
-            color: "green"
-          }, {
-            title: "Completed",
-            value: stats.completedTasks,
-            icon: CheckCircle,
-            color: "emerald"
-          }, {
-            title: "Overdue",
-            value: stats.overdueTasks,
-            icon: AlertTriangle,
-            color: "red"
-          }].map((stat, index) => <Card key={index} className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'} shadow-md`}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{stat.title}</p>
-                        <p className="text-xl font-bold">{stat.value}</p>
-                      </div>
-                      <stat.icon className={`w-6 h-6 text-${stat.color}-500`} />
-                    </div>
-                  </CardContent>
-                </Card>)}
-            </div>
-            
-            <Card className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'} shadow-lg`}>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Task Name</TableHead>
-                      <TableHead>User</TableHead>
-                      <TableHead>Words</TableHead>
-                      <TableHead>Duration</TableHead>
-                      <TableHead>Deposit</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Created</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredTasks.map(task => <TableRow key={task.id}>
-                        <TableCell className="font-medium">{task.task_name}</TableCell>
-                        <TableCell>
-                          {users.find(u => u.user_id === task.user_id)?.full_name || 'Unknown'}
-                        </TableCell>
-                        <TableCell>{task.word_count?.toLocaleString()}</TableCell>
-                        <TableCell>{task.duration_days} days</TableCell>
-                        <TableCell>{task.deposit_amount?.toLocaleString()} MMK</TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(task.status)}>
-                            {task.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{new Date(task.created_at).toLocaleDateString()}</TableCell>
-                      </TableRow>)}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </div>}
 
         {/* Enhanced Deposits Tab */}
         {activeTab === "deposits" && <div className="space-y-6">
