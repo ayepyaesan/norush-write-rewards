@@ -70,66 +70,89 @@ const RefundMenu = () => {
     try {
       setLoading(true);
       
-      // Get refund requests
+      // Optimized single query with JOINs for better performance
       const { data: refundRequests, error } = await supabase
         .from('refund_requests')
-        .select('*')
+        .select(`
+          *,
+          profiles!refund_requests_user_id_fkey (
+            user_id,
+            full_name,
+            kpay_name,
+            kpay_phone
+          ),
+          tasks!refund_requests_task_id_fkey (
+            id,
+            task_name,
+            status
+          ),
+          daily_milestones!refund_requests_milestone_id_fkey (
+            id,
+            day_number,
+            target_date,
+            words_written,
+            required_words
+          )
+        `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw new Error(`Failed to fetch refund data: ${error.message}`);
+      }
 
       if (!refundRequests || refundRequests.length === 0) {
         setRefunds([]);
         return;
       }
 
-      // Get related data separately
-      const taskIds = [...new Set(refundRequests.map(r => r.task_id))];
-      const milestoneIds = [...new Set(refundRequests.map(r => r.milestone_id))];
-      const userIds = [...new Set(refundRequests.map(r => r.user_id))];
-
-      const [tasksData, milestonesData, profilesData] = await Promise.all([
-        supabase.from('tasks').select('*').in('id', taskIds),
-        supabase.from('daily_milestones').select('*').in('id', milestoneIds),
-        supabase.from('profiles').select('user_id, full_name, kpay_name, kpay_phone').in('user_id', userIds)
-      ]);
-
-      // Combine data
+      // Transform data with improved error handling
       const refundsWithDetails: RefundEntry[] = refundRequests.map(refund => {
-        const profile = profilesData.data?.find(p => p.user_id === refund.user_id);
-        const task = tasksData.data?.find(t => t.id === refund.task_id);
-        const milestone = milestonesData.data?.find(m => m.id === refund.milestone_id);
+        const profile = Array.isArray(refund.profiles) ? refund.profiles[0] : refund.profiles;
+        const task = Array.isArray(refund.tasks) ? refund.tasks[0] : refund.tasks;
+        const milestone = Array.isArray(refund.daily_milestones) ? refund.daily_milestones[0] : refund.daily_milestones;
+        
+        // Enhanced error handling with detailed fallbacks
+        const taskName = task?.task_name || `Task ID: ${refund.task_id?.slice(0, 8)}...` || 'Unknown Task';
+        const userName = profile?.full_name || `User ID: ${refund.user_id?.slice(0, 8)}...` || 'Unknown User';
+        
+        // Calculate task status with null safety
+        const wordsWritten = milestone?.words_written || 0;
+        const requiredWords = milestone?.required_words || 0;
+        const taskStatus = requiredWords > 0 && wordsWritten >= requiredWords ? 'Target Met' : 'Pending';
         
         return {
           id: refund.id,
           user_id: refund.user_id,
           task_id: refund.task_id,
           milestone_id: refund.milestone_id,
-          amount: refund.amount,
-          status: refund.status,
+          amount: refund.amount || 0,
+          status: refund.status || 'awaiting_review',
           created_at: refund.created_at,
           processed_at: refund.processed_at,
           admin_notes: refund.admin_notes,
-          user_name: profile?.full_name || 'Unknown User',
-          task_name: task?.task_name || 'Unknown Task',
-          task_status: milestone?.words_written >= milestone?.required_words ? 'Target Met' : 'Pending',
-          kpay_name: profile?.kpay_name,
-          kpay_phone: profile?.kpay_phone,
+          user_name: userName,
+          task_name: taskName,
+          task_status: taskStatus,
+          kpay_name: profile?.kpay_name || null,
+          kpay_phone: profile?.kpay_phone || null,
           day_number: milestone?.day_number || 0,
           target_date: milestone?.target_date || '',
-          words_written: milestone?.words_written || 0,
-          required_words: milestone?.required_words || 0
+          words_written: wordsWritten,
+          required_words: requiredWords
         };
       });
 
       setRefunds(refundsWithDetails);
     } catch (error) {
       console.error('Error loading refunds:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load refund data';
       toast({
-        title: "Error",
-        description: "Failed to load refund data",
+        title: "Database Error",
+        description: errorMessage,
         variant: "destructive"
       });
+      setRefunds([]); // Set empty array on error to prevent undefined state
     } finally {
       setLoading(false);
     }
@@ -259,6 +282,7 @@ const RefundMenu = () => {
       <div className="space-y-6">
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <p className="text-muted-foreground ml-4">Loading refund data...</p>
         </div>
       </div>
     );
@@ -352,14 +376,21 @@ const RefundMenu = () => {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{refund.task_name}</div>
-                        <div className="text-sm text-muted-foreground">
-                          Day {refund.day_number} • {refund.task_status}
-                        </div>
-                      </div>
-                    </TableCell>
+                     <TableCell>
+                       <div>
+                         <div className="font-medium text-foreground" title={refund.task_name}>
+                           {refund.task_name}
+                         </div>
+                         <div className="text-sm text-muted-foreground">
+                           Day {refund.day_number} • {refund.task_status}
+                         </div>
+                         {refund.task_name.includes('Task ID:') && (
+                           <div className="text-xs text-orange-600 mt-1">
+                             ⚠️ Task data missing
+                           </div>
+                         )}
+                       </div>
+                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
                         <div className="text-sm">
