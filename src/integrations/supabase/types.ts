@@ -319,13 +319,15 @@ export type Database = {
         }
         Relationships: []
       }
-      refunds: {
+      refund_requests: {
         Row: {
           admin_notes: string | null
+          amount: number
           created_at: string
           id: string
-          refund_amount_mmk: number
-          refund_date: string
+          milestone_id: string
+          processed_at: string | null
+          processed_by: string | null
           status: string
           task_id: string
           updated_at: string
@@ -333,10 +335,12 @@ export type Database = {
         }
         Insert: {
           admin_notes?: string | null
+          amount: number
           created_at?: string
           id?: string
-          refund_amount_mmk: number
-          refund_date?: string
+          milestone_id: string
+          processed_at?: string | null
+          processed_by?: string | null
           status?: string
           task_id: string
           updated_at?: string
@@ -344,24 +348,18 @@ export type Database = {
         }
         Update: {
           admin_notes?: string | null
+          amount?: number
           created_at?: string
           id?: string
-          refund_amount_mmk?: number
-          refund_date?: string
+          milestone_id?: string
+          processed_at?: string | null
+          processed_by?: string | null
           status?: string
           task_id?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "refunds_task_id_fkey"
-            columns: ["task_id"]
-            isOneToOne: false
-            referencedRelation: "tasks"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       signup_requests: {
         Row: {

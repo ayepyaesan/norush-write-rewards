@@ -276,17 +276,31 @@ const TaskEditor = ({ taskId }: TaskEditorProps) => {
 
       if (fileError) throw fileError;
 
-      // Update daily milestone
-      const { error: milestoneError } = await supabase
-        .from('daily_milestones')
-        .update({
-          words_written: wordCount,
-          status: wordCount >= getDailyTarget(activeDay) ? 'completed' : 'pending'
-        })
-        .eq('task_id', taskId)
-        .eq('day_number', activeDay);
+       // Update daily milestone
+       const dailyTarget = getDailyTarget(activeDay);
+       const newStatus = wordCount >= dailyTarget ? 'completed' : 'pending';
+       const milestone = dailyMilestones.find(m => m.day_number === activeDay);
+       const wasCompleted = milestone?.status === 'completed';
+       const isNowCompleted = newStatus === 'completed';
+       
+       const { error: milestoneError } = await supabase
+         .from('daily_milestones')
+         .update({
+           words_written: wordCount,
+           status: newStatus
+         })
+         .eq('task_id', taskId)
+         .eq('day_number', activeDay);
 
-      if (milestoneError) throw milestoneError;
+       if (milestoneError) throw milestoneError;
+
+       // Show success message for target completion
+       if (!wasCompleted && isNowCompleted) {
+         toast({
+           title: "🎉 Target Met!",
+           description: `Congratulations! You've completed Day ${activeDay}. Your refund request has been submitted for admin review.`,
+         });
+       }
 
       // Update local state
       setTaskFiles(prev => prev.map(file => 
@@ -305,10 +319,12 @@ const TaskEditor = ({ taskId }: TaskEditorProps) => {
           : milestone
       ));
 
-      toast({
-        title: "Saved Successfully",
-        description: `Day ${activeDay} content saved with ${wordCount} words`,
-      });
+      if (milestone?.status !== 'completed' || wordCount < getDailyTarget(activeDay)) {
+        toast({
+          title: "Saved Successfully", 
+          description: `Day ${activeDay} content saved with ${wordCount} words`,
+        });
+      }
 
     } catch (error) {
       console.error('Error saving content:', error);

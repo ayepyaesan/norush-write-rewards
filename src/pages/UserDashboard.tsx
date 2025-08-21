@@ -13,6 +13,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
+import RefundRequestTracker from "@/components/RefundRequestTracker";
 
 interface UserProfile {
   id: string;

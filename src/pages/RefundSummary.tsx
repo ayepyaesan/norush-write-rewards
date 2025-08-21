@@ -81,14 +81,14 @@ const RefundSummary = () => {
       const completedDays = dailyProgress.filter(day => day.status === 'completed').length;
       const refundAmount = Math.floor((completedDays / task.duration_days) * task.deposit_amount);
 
+      // This is a legacy refund request - we'll use daily_milestones instead
       const { error } = await supabase
-        .from('refunds')
-        .insert({
-          task_id: task.id,
-          user_id: (await supabase.auth.getUser()).data.user?.id,
-          refund_amount_mmk: refundAmount,
-          status: 'pending'
-        });
+        .from('daily_milestones')
+        .update({
+          refund_status: 'awaiting_review'
+        })
+        .eq('task_id', task.id)
+        .eq('status', 'completed');
 
       if (error) throw error;
 

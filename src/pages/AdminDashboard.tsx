@@ -14,6 +14,7 @@ import { Shield, Users, FileText, CreditCard, LogOut, Settings, Bell, Search, Ch
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
+import RefundRequestTracker from "@/components/RefundRequestTracker";
 // Charts removed to avoid TypeScript conflicts - using visual indicators instead
 
 interface UserProfile {
@@ -274,12 +275,12 @@ const AdminDashboard = () => {
       // Query 12: Verified payment amounts for revenue calculation
       supabase.from('payments').select('amount').eq('payment_status', 'verified'),
       // Query 13: Refunds today (from refunds table)
-      supabase.from('refunds').select('*', {
+      supabase.from('refund_requests').select('*', {
         count: 'exact',
         head: true
       }).gte('created_at', today).lt('created_at', tomorrowStr),
       // Query 14: All refunds for total calculation
-      supabase.from('refunds').select('refund_amount_mmk')]);
+      supabase.from('refund_requests').select('amount')]);
 
       // Debug logging for each query result
       queries.forEach((result, index) => {
@@ -309,7 +310,7 @@ const AdminDashboard = () => {
 
       // Calculate totals
       const totalRevenue = revenueData.reduce((sum, payment) => sum + (payment.amount || 0), 0);
-      const totalRefunds = refundsData.reduce((sum, refund) => sum + (refund.refund_amount_mmk || 0), 0);
+      const totalRefunds = refundsData.reduce((sum, refund) => sum + (refund.amount || 0), 0);
       const netProfit = totalRevenue - totalRefunds;
       const avgCompletion = totalTasksCount > 0 ? Math.round(completedTasksCount / totalTasksCount * 100) : 0;
       const newStats = {
@@ -680,14 +681,14 @@ const AdminDashboard = () => {
       const endDateStr = now.toISOString().split('T')[0];
 
       // Fetch comprehensive data for the period
-      const [usersData, tasksData, paymentsData, refundsData] = await Promise.all([supabase.from('profiles').select('*').gte('created_at', startDateStr).eq('role', 'user'), supabase.from('tasks').select('*').gte('created_at', startDateStr), supabase.from('payments').select('*').gte('created_at', startDateStr), supabase.from('refunds').select('*').gte('created_at', startDateStr)]);
+      const [usersData, tasksData, paymentsData, refundsData] = await Promise.all([supabase.from('profiles').select('*').gte('created_at', startDateStr).eq('role', 'user'), supabase.from('tasks').select('*').gte('created_at', startDateStr), supabase.from('payments').select('*').gte('created_at', startDateStr), supabase.from('refund_requests').select('*').gte('created_at', startDateStr)]);
 
       // Calculate report metrics
       const totalUsers = usersData.data?.length || 0;
       const totalTasks = tasksData.data?.length || 0;
       const completedTasks = tasksData.data?.filter(t => t.status === 'completed').length || 0;
       const totalRevenue = paymentsData.data?.filter(p => p.payment_status === 'verified').reduce((sum, p) => sum + p.amount, 0) || 0;
-      const totalRefunds = refundsData.data?.reduce((sum, r) => sum + r.refund_amount_mmk, 0) || 0;
+      const totalRefunds = refundsData.data?.reduce((sum, r) => sum + r.amount, 0) || 0;
       const netProfit = totalRevenue - totalRefunds;
 
       // Create report data
