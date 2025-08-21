@@ -274,7 +274,23 @@ const DailyTextEditor = () => {
   };
 
   const handleSubmit = async () => {
+    console.log('Submit button clicked - debugging info:', {
+      user: user?.id,
+      task: task?.id,
+      taskId,
+      activeDay,
+      currentContent: currentContent.substring(0, 100) + '...',
+      contentLength: currentContent.length,
+      taskFiles: taskFiles.map(f => ({ day: f.day_number, id: f.id }))
+    });
+
     if (!user || !task || activeDay < 1 || !currentContent.trim()) {
+      console.log('Submit failed - validation:', { 
+        hasUser: !!user, 
+        hasTask: !!task, 
+        activeDay, 
+        hasContent: !!currentContent.trim() 
+      });
       toast({
         title: "Error",
         description: "Please write some content before submitting.",
@@ -296,30 +312,62 @@ const DailyTextEditor = () => {
       const wordCount = textContent.trim().split(/\s+/).filter(word => word.length > 0).length;
       const targetWords = getDailyTarget();
 
-      console.log('Submitting for validation:', { title, wordCount, targetWords });
+      console.log('Preparing validation call:', { 
+        title, 
+        wordCount, 
+        targetWords, 
+        activeFileId: activeFile?.id,
+        textContentLength: textContent.length
+      });
+
+      // Get or create milestone for this day
+      let milestoneId = null;
+      const { data: existingMilestones } = await supabase
+        .from('daily_milestones')
+        .select('id')
+        .eq('task_id', taskId)
+        .eq('user_id', user.id)
+        .eq('day_number', activeDay)
+        .single();
+
+      if (existingMilestones) {
+        milestoneId = existingMilestones.id;
+      }
+
+      console.log('Using milestone ID:', milestoneId);
 
       // Call validation edge function
+      console.log('Calling ai-content-evaluator edge function...');
       const { data: validationResult, error } = await supabase.functions.invoke('ai-content-evaluator', {
         body: {
           content: textContent,
           title,
           userId: user.id,
           taskId,
-          milestoneId: activeFile?.id, // Use file ID as milestone reference
+          milestoneId,
           targetWords,
           action: 'validate'
         }
       });
 
+      console.log('Edge function response:', { validationResult, error });
+
       if (error) {
-        throw error;
+        console.error('Edge function error:', error);
+        throw new Error(`Validation service error: ${error.message || 'Unknown error'}`);
+      }
+
+      if (!validationResult) {
+        throw new Error('No response from validation service');
       }
 
       console.log('Validation result:', validationResult);
 
       if (!validationResult.isValid) {
         // Show validation errors
-        setValidationErrors(validationResult.errors || ['Validation failed']);
+        const errorMessages = validationResult.errors || ['Validation failed'];
+        setValidationErrors(errorMessages);
+        console.log('Validation failed with errors:', errorMessages);
         toast({
           title: "Submission Failed",
           description: "Your text does not meet submission criteria. Please revise and try again.",
@@ -328,24 +376,31 @@ const DailyTextEditor = () => {
         return;
       }
 
+      console.log('Validation passed, proceeding with submission...');
+
       // If validation passes, save the content first
       await saveContent();
 
       // Then create refund request
-      const { error: refundError } = await supabase
+      console.log('Creating refund request...');
+      const refundAmount = Math.floor(task.deposit_amount / task.duration_days);
+      const { data: refundData, error: refundError } = await supabase
         .from('refund_requests')
         .insert({
           user_id: user.id,
           task_id: taskId,
-          milestone_id: activeFile?.id,
-          amount: Math.floor(task.deposit_amount / task.duration_days), // Daily refund amount
+          milestone_id: milestoneId,
+          amount: refundAmount,
           status: 'awaiting_review'
-        });
+        })
+        .select();
+
+      console.log('Refund request result:', { refundData, refundError });
 
       if (refundError) {
         console.error('Error creating refund request:', refundError);
         toast({
-          title: "Error",
+          title: "Error", 
           description: "Failed to submit refund request. Please try again.",
           variant: "destructive",
         });
@@ -353,6 +408,7 @@ const DailyTextEditor = () => {
       }
 
       // Success
+      console.log('Submit successful!');
       toast({
         title: "Submission Successful! ✅",
         description: "Your refund request has been sent for review.",
@@ -363,7 +419,7 @@ const DailyTextEditor = () => {
       setValidationErrors([]);
 
     } catch (error) {
-      console.error('Submit error:', error);
+      console.error('Submit error details:', error);
       toast({
         title: "Submit Error",
         description: `Failed to submit content: ${error instanceof Error ? error.message : 'Unknown error'}`,
