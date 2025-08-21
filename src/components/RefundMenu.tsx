@@ -445,7 +445,7 @@ const RefundMenu = () => {
       </Card>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
@@ -462,22 +462,9 @@ const RefundMenu = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <Banknote className="w-5 h-5 text-blue-600" />
-              <div>
-                <div className="text-sm text-muted-foreground">Refund Sent</div>
-                <div className="text-2xl font-bold">
-                  {refunds.filter(r => r.status === 'approved').length}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
               <CheckCircle className="w-5 h-5 text-green-600" />
               <div>
-                <div className="text-sm text-muted-foreground">Completed</div>
+                <div className="text-sm text-muted-foreground">Refunds Received</div>
                 <div className="text-2xl font-bold">
                   {refunds.filter(r => r.status === 'completed').length}
                 </div>
@@ -492,7 +479,7 @@ const RefundMenu = () => {
               <div>
                 <div className="text-sm text-muted-foreground">Total Amount</div>
                 <div className="text-2xl font-bold">
-                  {formatCurrency(refunds.reduce((sum, r) => sum + r.amount, 0))}
+                  {formatCurrency(refunds.filter(r => r.status === 'completed').reduce((sum, r) => sum + r.amount, 0))}
                 </div>
               </div>
             </div>
