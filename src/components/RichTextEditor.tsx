@@ -40,6 +40,33 @@ export const RichTextEditor = ({
   targetWords = 0,
   title = "Writing Editor"
 }: RichTextEditorProps) => {
+  // 24-hour countdown timer state - MUST be before early returns
+  const [timeRemaining, setTimeRemaining] = useState<number>(86400); // 24 hours in seconds
+
+  // Countdown timer effect
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeRemaining((prev) => {
+        if (prev <= 1) {
+          // Reset to 24 hours when timer reaches 0
+          return 86400;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // Initialize timer based on current day start
+  useEffect(() => {
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+    const secondsRemaining = Math.floor((endOfDay.getTime() - now.getTime()) / 1000);
+    setTimeRemaining(Math.max(0, secondsRemaining));
+  }, []);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -66,33 +93,6 @@ export const RichTextEditor = ({
       },
     },
   });
-
-  // 24-hour countdown timer state
-  const [timeRemaining, setTimeRemaining] = useState<number>(86400); // 24 hours in seconds
-
-  // Countdown timer effect
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeRemaining((prev) => {
-        if (prev <= 1) {
-          // Reset to 24 hours when timer reaches 0
-          return 86400;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  // Initialize timer based on current day start
-  useEffect(() => {
-    const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
-    const secondsRemaining = Math.floor((endOfDay.getTime() - now.getTime()) / 1000);
-    setTimeRemaining(Math.max(0, secondsRemaining));
-  }, []);
 
   const toggleBold = () => editor?.chain().focus().toggleBold().run();
   const toggleItalic = () => editor?.chain().focus().toggleItalic().run();
