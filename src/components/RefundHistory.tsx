@@ -93,18 +93,18 @@ const RefundHistory = ({ userId }: RefundHistoryProps) => {
 
       if (error) throw error;
 
-      // Get approved refund requests
-      const { data: approvedRefunds, error: approvedError } = await supabase
+      // Get pending/approved refund requests (but NOT completed ones - those are in refund_history)
+      const { data: pendingRefunds, error: pendingError } = await supabase
         .from('refund_requests')
         .select('*')
         .eq('user_id', userId)
-        .eq('status', 'approved')
+        .in('status', ['awaiting_review', 'approved'])
         .order('created_at', { ascending: false });
 
-      if (approvedError) throw approvedError;
+      if (pendingError) throw pendingError;
 
-      // Combine both arrays
-      const allRefunds = [...(refunds || []), ...(approvedRefunds || [])];
+      // Combine both arrays - refund_history contains completed refunds, refund_requests contains pending/approved
+      const allRefunds = [...(refunds || []), ...(pendingRefunds || [])];
 
       if (allRefunds.length === 0) {
         setRefundHistory([]);
@@ -118,8 +118,8 @@ const RefundHistory = ({ userId }: RefundHistoryProps) => {
         .select('id, task_name')
         .in('id', taskIds);
 
-      // Get milestone data for approved refunds
-      const milestoneIds = approvedRefunds?.map(r => r.milestone_id).filter(Boolean) || [];
+      // Get milestone data for pending refunds
+      const milestoneIds = pendingRefunds?.map(r => r.milestone_id).filter(Boolean) || [];
       const { data: milestones } = milestoneIds.length > 0 
         ? await supabase
             .from('daily_milestones')
@@ -140,7 +140,7 @@ const RefundHistory = ({ userId }: RefundHistoryProps) => {
           task_id: refund.task_id,
           day_number: dayNumber,
           refund_amount: amount,
-          status: refund.status === 'approved' ? 'received' : refund.status,
+          status: refund.status, // Keep original status - don't modify it
           processed_at: refund.processed_at,
           created_at: refund.created_at,
           task_name: tasks?.find(t => t.id === refund.task_id)?.task_name || 'Unknown Task'
@@ -170,7 +170,9 @@ const RefundHistory = ({ userId }: RefundHistoryProps) => {
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       received: { label: "Received", className: "bg-green-100 text-green-800" },
-      awaiting_review: { label: "Awaiting Review", className: "bg-yellow-100 text-yellow-800" }
+      awaiting_review: { label: "Awaiting Review", className: "bg-yellow-100 text-yellow-800" },
+      approved: { label: "Sent (Pending Transfer)", className: "bg-blue-100 text-blue-800" },
+      completed: { label: "Received", className: "bg-green-100 text-green-800" }
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || { 
@@ -208,7 +210,7 @@ const RefundHistory = ({ userId }: RefundHistoryProps) => {
             {formatCurrency(totalRefundEarned)}
           </div>
           <p className="text-xs text-muted-foreground">
-            Accumulated from {refundHistory.filter(r => r.status === 'received').length} completed refunds
+            Accumulated from {refundHistory.filter(r => r.status === 'received' || r.status === 'completed').length} completed refunds
           </p>
         </CardContent>
       </Card>
@@ -292,7 +294,7 @@ const RefundHistory = ({ userId }: RefundHistoryProps) => {
               <div>
                 <div className="text-sm text-muted-foreground">Received Refunds</div>
                 <div className="text-2xl font-bold">
-                  {refundHistory.filter(r => r.status === 'received').length}
+                  {refundHistory.filter(r => r.status === 'received' || r.status === 'completed').length}
                 </div>
               </div>
             </div>
