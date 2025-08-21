@@ -157,7 +157,11 @@ const Workspace = () => {
         <Card className="gradient-card border-0 shadow-warm">
           <CardHeader className="text-center space-y-4">
             <div className="w-16 h-16 mx-auto rounded-full gradient-warm flex items-center justify-center shadow-warm">
-              <span className="text-2xl font-bold text-primary-foreground">NR</span>
+              <img 
+                src="/lovable-uploads/01058b05-2f3e-4ee9-bf33-c2980736e806.png" 
+                alt="NoRush Logo" 
+                className="w-10 h-10 object-contain"
+              />
             </div>
             <CardTitle className="text-2xl font-bold text-foreground">
               Welcome to NoRush
