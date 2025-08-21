@@ -292,6 +292,7 @@ export type Database = {
           kpay_name: string | null
           kpay_phone: string | null
           role: string
+          total_refund_earned: number | null
           updated_at: string
           user_id: string
         }
@@ -303,6 +304,7 @@ export type Database = {
           kpay_name?: string | null
           kpay_phone?: string | null
           role: string
+          total_refund_earned?: number | null
           updated_at?: string
           user_id: string
         }
@@ -314,6 +316,49 @@ export type Database = {
           kpay_name?: string | null
           kpay_phone?: string | null
           role?: string
+          total_refund_earned?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      refund_history: {
+        Row: {
+          created_at: string
+          day_number: number
+          id: string
+          processed_at: string | null
+          processed_by: string | null
+          refund_amount: number
+          refund_request_id: string
+          status: string
+          task_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          day_number: number
+          id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          refund_amount: number
+          refund_request_id: string
+          status?: string
+          task_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          day_number?: number
+          id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          refund_amount?: number
+          refund_request_id?: string
+          status?: string
+          task_id?: string
           updated_at?: string
           user_id?: string
         }
@@ -483,6 +528,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      complete_refund: {
+        Args: { p_admin_user_id: string; p_refund_request_id: string }
+        Returns: undefined
+      }
       generate_daily_milestones: {
         Args: {
           p_duration_days: number
