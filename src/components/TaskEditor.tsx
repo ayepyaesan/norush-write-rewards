@@ -9,10 +9,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Save, Calendar, Target, TrendingUp, CheckCircle,
-  AlertCircle, Clock, FileText, ArrowLeft, Lock
+  AlertCircle, Clock, FileText, ArrowLeft, Lock, Bot, XCircle
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import DailyTargetTracker from "./DailyTargetTracker";
 
 interface Task {
   id: string;
@@ -23,6 +24,7 @@ interface Task {
   status: string;
   created_at: string;
   deadline: string | null;
+  user_id?: string;
 }
 
 interface TaskFile {
@@ -46,6 +48,13 @@ interface DailyMilestone {
   status: string;
   refund_amount: number;
   refund_status: string;
+  evaluation_status?: 'pending' | 'target_met' | 'target_not_met';
+  content_quality_score?: number;
+  words_deficit?: number;
+  next_day_target?: number;
+  flagged_for_review?: boolean;
+  ai_feedback?: string;
+  paste_attempts?: number;
 }
 
 interface TaskEditorProps {
@@ -60,6 +69,7 @@ const TaskEditor = ({ taskId }: TaskEditorProps) => {
   const [currentContent, setCurrentContent] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isEvaluating, setIsEvaluating] = useState(false);
   const [mainEditorContent, setMainEditorContent] = useState("");
   const [activeTab, setActiveTab] = useState("daily");
   const { toast } = useToast();
@@ -123,7 +133,7 @@ const TaskEditor = ({ taskId }: TaskEditorProps) => {
       if (!milestonesData || milestonesData.length === 0) {
         await generateDailyMilestones(taskData);
       } else {
-        setDailyMilestones(milestonesData);
+        setDailyMilestones(milestonesData as DailyMilestone[]);
       }
 
     } catch (error) {
@@ -214,7 +224,7 @@ const TaskEditor = ({ taskId }: TaskEditorProps) => {
         .select();
 
       if (error) throw error;
-      setDailyMilestones(createdMilestones);
+      setDailyMilestones(createdMilestones as DailyMilestone[]);
     } catch (error) {
       console.error('Error generating daily milestones:', error);
     }
@@ -335,6 +345,58 @@ const TaskEditor = ({ taskId }: TaskEditorProps) => {
       });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const requestAIEvaluation = async () => {
+    if (!task || !currentContent) {
+      toast({
+        title: "No Content",
+        description: "Please write some content before requesting evaluation.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsEvaluating(true);
+    try {
+      const milestone = dailyMilestones.find(m => m.day_number === activeDay);
+      if (!milestone) {
+        throw new Error('Milestone not found');
+      }
+
+      const { data, error } = await supabase.functions.invoke('ai-content-evaluator', {
+        body: {
+          milestoneId: milestone.id,
+          taskId: task.id,
+          userId: task.user_id || '',
+          content: currentContent,
+          wordCount: countWords(currentContent),
+          targetWords: milestone.required_words,
+          taskTitle: task.task_name
+        }
+      });
+
+      if (error) throw error;
+
+      // Reload data to show updated evaluation
+      await loadTaskData();
+
+      toast({
+        title: "Evaluation Complete",
+        description: `AI evaluation: ${data.evaluation.verdict}`,
+        variant: data.evaluation.verdict === 'target_met' ? 'default' : 'destructive',
+      });
+
+    } catch (error) {
+      console.error('Error requesting AI evaluation:', error);
+      toast({
+        title: "Evaluation Failed",
+        description: "Failed to get AI evaluation. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsEvaluating(false);
     }
   };
 

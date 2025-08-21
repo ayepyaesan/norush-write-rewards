@@ -68,15 +68,77 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_evaluations: {
+        Row: {
+          ai_reasoning: string | null
+          ai_verdict: string
+          content_analyzed: string
+          created_at: string
+          evaluation_date: string
+          flagged_issues: Json | null
+          id: string
+          milestone_id: string
+          quality_checks: Json | null
+          rule_violations: Json | null
+          task_id: string
+          updated_at: string
+          user_id: string
+          word_count_actual: number
+          word_count_target: number
+        }
+        Insert: {
+          ai_reasoning?: string | null
+          ai_verdict: string
+          content_analyzed: string
+          created_at?: string
+          evaluation_date?: string
+          flagged_issues?: Json | null
+          id?: string
+          milestone_id: string
+          quality_checks?: Json | null
+          rule_violations?: Json | null
+          task_id: string
+          updated_at?: string
+          user_id: string
+          word_count_actual: number
+          word_count_target: number
+        }
+        Update: {
+          ai_reasoning?: string | null
+          ai_verdict?: string
+          content_analyzed?: string
+          created_at?: string
+          evaluation_date?: string
+          flagged_issues?: Json | null
+          id?: string
+          milestone_id?: string
+          quality_checks?: Json | null
+          rule_violations?: Json | null
+          task_id?: string
+          updated_at?: string
+          user_id?: string
+          word_count_actual?: number
+          word_count_target?: number
+        }
+        Relationships: []
+      }
       daily_milestones: {
         Row: {
+          ai_feedback: string | null
+          content_quality_score: number | null
           content_validated: boolean | null
           created_at: string | null
           day_number: number
+          evaluated_at: string | null
+          evaluation_status: string | null
+          flagged_for_review: boolean | null
           id: string
+          next_day_target: number | null
+          paste_attempts: number | null
           refund_amount: number | null
           refund_status: string | null
           required_words: number
+          rule_compliance: Json | null
           status: string | null
           target_date: string
           task_id: string
@@ -84,16 +146,25 @@ export type Database = {
           user_id: string
           validation_notes: string | null
           words_carried_forward: number | null
+          words_deficit: number | null
           words_written: number | null
         }
         Insert: {
+          ai_feedback?: string | null
+          content_quality_score?: number | null
           content_validated?: boolean | null
           created_at?: string | null
           day_number: number
+          evaluated_at?: string | null
+          evaluation_status?: string | null
+          flagged_for_review?: boolean | null
           id?: string
+          next_day_target?: number | null
+          paste_attempts?: number | null
           refund_amount?: number | null
           refund_status?: string | null
           required_words: number
+          rule_compliance?: Json | null
           status?: string | null
           target_date: string
           task_id: string
@@ -101,16 +172,25 @@ export type Database = {
           user_id: string
           validation_notes?: string | null
           words_carried_forward?: number | null
+          words_deficit?: number | null
           words_written?: number | null
         }
         Update: {
+          ai_feedback?: string | null
+          content_quality_score?: number | null
           content_validated?: boolean | null
           created_at?: string | null
           day_number?: number
+          evaluated_at?: string | null
+          evaluation_status?: string | null
+          flagged_for_review?: boolean | null
           id?: string
+          next_day_target?: number | null
+          paste_attempts?: number | null
           refund_amount?: number | null
           refund_status?: string | null
           required_words?: number
+          rule_compliance?: Json | null
           status?: string | null
           target_date?: string
           task_id?: string
@@ -118,6 +198,7 @@ export type Database = {
           user_id?: string
           validation_notes?: string | null
           words_carried_forward?: number | null
+          words_deficit?: number | null
           words_written?: number | null
         }
         Relationships: [
@@ -543,6 +624,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_next_day_target: {
+        Args: {
+          p_current_day: number
+          p_daily_target: number
+          p_task_id: string
+          p_words_written: number
+        }
+        Returns: number
+      }
       complete_refund: {
         Args: { p_admin_user_id: string; p_refund_request_id: string }
         Returns: undefined

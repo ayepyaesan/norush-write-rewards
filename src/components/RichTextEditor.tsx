@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface RichTextEditorProps {
   content: string;
@@ -28,6 +30,8 @@ interface RichTextEditorProps {
   wordCount?: number;
   targetWords?: number;
   title?: string;
+  milestoneId?: string;
+  disablePaste?: boolean;
 }
 
 export const RichTextEditor = ({ 
@@ -38,8 +42,11 @@ export const RichTextEditor = ({
   placeholder = "Start writing...",
   wordCount = 0,
   targetWords = 0,
-  title = "Writing Editor"
+  title = "Writing Editor",
+  milestoneId,
+  disablePaste = true
 }: RichTextEditorProps) => {
+  const { toast } = useToast();
   // 24-hour countdown timer state - MUST be before early returns
   const [timeRemaining, setTimeRemaining] = useState<number>(86400); // 24 hours in seconds
 
@@ -90,6 +97,30 @@ export const RichTextEditor = ({
     editorProps: {
       attributes: {
         class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none min-h-[400px] p-4',
+      },
+      handlePaste: (view, event) => {
+        if (disablePaste) {
+          event.preventDefault();
+          
+          // Track paste attempt in database
+          if (milestoneId) {
+            supabase
+              .from('daily_milestones')
+              .update({ 
+                paste_attempts: (supabase as any).sql`paste_attempts + 1`
+              })
+              .eq('id', milestoneId);
+          }
+          
+          toast({
+            title: "Paste Disabled",
+            description: "Copy-pasting is not allowed in this editor. Please type your content manually.",
+            variant: "destructive",
+          });
+          
+          return true; // Prevent default paste behavior
+        }
+        return false; // Allow paste if not disabled
       },
     },
   });
