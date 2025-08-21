@@ -391,7 +391,7 @@ const RefundMenu = () => {
                     </TableCell>
                      <TableCell>
                        <div>
-                         <div className="font-medium text-foreground" title={refund.task_name}>
+                         <div className="font-medium text-foreground text-base" title={refund.task_name}>
                            {refund.task_name}
                          </div>
                          <div className="text-sm text-muted-foreground">
