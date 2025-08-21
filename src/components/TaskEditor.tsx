@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RichTextEditor } from "@/components/RichTextEditor";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -249,7 +250,10 @@ const TaskEditor = ({ taskId }: TaskEditorProps) => {
 
   const countWords = (text: string): number => {
     if (!text || text.trim() === '') return 0;
-    return text.trim().split(/\s+/).length;
+    // Strip HTML tags for word counting
+    const textContent = text.replace(/<[^>]*>/g, '').trim();
+    if (textContent === '') return 0;
+    return textContent.split(/\s+/).length;
   };
 
   const saveContent = async () => {
@@ -490,30 +494,19 @@ const TaskEditor = ({ taskId }: TaskEditorProps) => {
                   />
                 </div>
 
-                {/* Text Editor */}
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <label className="text-sm font-medium">Day {activeDay} Content</label>
-                    <Button 
-                      onClick={saveContent} 
-                      disabled={isSaving}
-                      className="gradient-warm hover-lift flex items-center gap-2"
-                    >
-                      <Save className="w-4 h-4" />
-                      {isSaving ? 'Saving...' : 'Save'}
-                    </Button>
-                  </div>
-                  <Textarea
-                    ref={textareaRef}
-                    value={currentContent}
-                    onChange={(e) => handleContentChange(e.target.value)}
-                    onPaste={handlePaste}
-                    placeholder={`Start writing for Day ${activeDay}... Remember, no copy-pasting allowed!`}
-                    className="min-h-[400px] resize-none"
-                  />
-                  <div className="text-xs text-muted-foreground">
-                    💡 Tip: Paste is disabled - you must type all content to ensure authenticity.
-                  </div>
+                {/* Rich Text Editor */}
+                <RichTextEditor
+                  content={currentContent}
+                  onChange={(content) => handleContentChange(content)}
+                  onSave={saveContent}
+                  isSaving={isSaving}
+                  placeholder={`Start writing for Day ${activeDay}... Remember, no copy-pasting allowed!`}
+                  wordCount={getCurrentWordCount()}
+                  targetWords={getDailyTarget(activeDay)}
+                  title={`Day ${activeDay} Content`}
+                />
+                <div className="text-xs text-muted-foreground mt-2">
+                  💡 Tip: Paste is disabled - you must type all content to ensure authenticity.
                 </div>
               </CardContent>
             </Card>
