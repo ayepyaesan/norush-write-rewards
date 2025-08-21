@@ -640,6 +640,17 @@ export type Database = {
         Args: { p_admin_user_id: string; p_refund_request_id: string }
         Returns: undefined
       }
+      create_signup_request: {
+        Args: {
+          p_email: string
+          p_full_name: string
+          p_kpay_name?: string
+          p_kpay_phone?: string
+          p_password: string
+          p_role?: string
+        }
+        Returns: string
+      }
       generate_daily_milestones: {
         Args: {
           p_duration_days: number
