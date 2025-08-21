@@ -33,7 +33,7 @@ interface Task {
   created_at: string;
   deadline: string | null;
   base_rate_per_word: number;
-  deposits?: Deposit[];
+  payments?: Payment[];
   daily_milestones?: DailyMilestone[];
   task_files?: TaskFile[];
 }
@@ -60,15 +60,17 @@ interface DailyMilestone {
   refund_status: string;
 }
 
-interface Deposit {
+interface Payment {
   id: string;
   task_id: string;
+  user_id: string;
   amount: number;
   payment_status: string;
   screenshot_url: string | null;
-  verified_at: string | null;
+  payment_code: string | null;
+  reviewed_at: string | null;
+  admin_notes: string | null;
   created_at: string;
-  updated_at: string;
 }
 
 const UserDashboard = () => {
@@ -95,7 +97,7 @@ const UserDashboard = () => {
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'deposits',
+          table: 'payments',
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
@@ -163,7 +165,7 @@ const UserDashboard = () => {
         .from('tasks')
         .select(`
           *,
-          deposits (*),
+          payments (*),
           daily_milestones (*),
           task_files (*)
         `)
@@ -196,20 +198,20 @@ const UserDashboard = () => {
   };
 
   const getTaskStatusColor = (task: Task) => {
-    const deposit = task.deposits?.[0];
-    if (!deposit) return "text-yellow-600";
-    if (deposit.payment_status === 'verified') return "text-green-600";
-    if (deposit.screenshot_url && deposit.payment_status === 'pending') return "text-orange-600";
-    if (deposit.payment_status === 'pending' && !deposit.screenshot_url) return "text-blue-600";
+    const payment = task.payments?.[0];
+    if (!payment) return "text-yellow-600";
+    if (payment.payment_status === 'verified') return "text-green-600";
+    if (payment.screenshot_url && payment.payment_status === 'pending') return "text-orange-600";
+    if (payment.payment_status === 'pending' && !payment.screenshot_url) return "text-blue-600";
     return "text-red-600";
   };
 
   const getTaskStatusText = (task: Task) => {
-    const deposit = task.deposits?.[0];
-    if (!deposit) return "Payment Required";
-    if (deposit.payment_status === 'verified') return "Active";
-    if (deposit.screenshot_url && deposit.payment_status === 'pending') return "Verification Pending";
-    if (deposit.payment_status === 'pending' && !deposit.screenshot_url) return "Upload Payment Proof";
+    const payment = task.payments?.[0];
+    if (!payment) return "Payment Required";
+    if (payment.payment_status === 'verified') return "Active";
+    if (payment.screenshot_url && payment.payment_status === 'pending') return "Verification Pending";
+    if (payment.payment_status === 'pending' && !payment.screenshot_url) return "Upload Payment Proof";
     return "Payment Required";
   };
 
@@ -368,8 +370,8 @@ const UserDashboard = () => {
             <div className="grid gap-6">
               {tasks.map((task) => {
                 const todayProgress = getTodayProgress(task);
-                const deposit = task.deposits?.[0];
-                const isVerified = deposit?.payment_status === 'verified';
+                const payment = task.payments?.[0];
+                const isVerified = payment?.payment_status === 'verified';
                 
                 return (
                   <Card key={task.id} className="gradient-card border-0 shadow-warm">
@@ -437,14 +439,14 @@ const UserDashboard = () => {
                           <div className="flex items-center gap-2 text-warning">
                             <AlertCircle className="w-4 h-4" />
                             <span className="text-sm font-medium">
-                              {deposit?.payment_status === 'pending' && !deposit?.screenshot_url 
+                              {payment?.payment_status === 'pending' && !payment?.screenshot_url 
                                 ? "Upload Payment Proof" 
                                 : "Payment Required"
                               }
                             </span>
                           </div>
                           <p className="text-xs text-muted-foreground mt-1">
-                            {deposit?.payment_status === 'pending' && !deposit?.screenshot_url
+                            {payment?.payment_status === 'pending' && !payment?.screenshot_url
                               ? "Please upload your payment screenshot to verify your payment"
                               : "Complete payment verification to start writing"
                             }
@@ -454,7 +456,7 @@ const UserDashboard = () => {
                             className="mt-2"
                             onClick={() => navigate(`/payment/${task.id}`)}
                           >
-                            {deposit?.payment_status === 'pending' && !deposit?.screenshot_url
+                            {payment?.payment_status === 'pending' && !payment?.screenshot_url
                               ? "Upload Screenshot"
                               : "Complete Payment"
                             }
@@ -508,8 +510,8 @@ const UserDashboard = () => {
               <CardContent>
                 <div className="space-y-4">
                   {tasks.map((task) => {
-                    const deposit = task.deposits?.[0];
-                    if (!deposit) return null;
+                    const payment = task.payments?.[0];
+                    if (!payment) return null;
                     
                     return (
                       <div key={task.id} className="border rounded-lg p-4">
@@ -517,21 +519,21 @@ const UserDashboard = () => {
                           <div>
                             <h4 className="font-medium">{task.task_name}</h4>
                             <p className="text-sm text-muted-foreground">
-                              {new Date(deposit.created_at).toLocaleDateString()}
+                              {new Date(payment.created_at).toLocaleDateString()}
                             </p>
                           </div>
-                          <Badge variant={deposit.payment_status === 'verified' ? "default" : "secondary"}>
-                            {deposit.payment_status === 'verified' ? 'Verified' : 'Pending'}
+                          <Badge variant={payment.payment_status === 'verified' ? "default" : "secondary"}>
+                            {payment.payment_status === 'verified' ? 'Verified' : 'Pending'}
                           </Badge>
                         </div>
                         <div className="text-lg font-bold text-primary">
-                          {deposit.amount.toLocaleString()} MMK
+                          {payment.amount.toLocaleString()} MMK
                         </div>
                       </div>
                     );
                   })}
                   
-                  {tasks.every(task => !task.deposits?.[0]) && (
+                  {tasks.every(task => !task.payments?.[0]) && (
                     <div className="text-center py-8">
                       <DollarSign className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                       <p className="text-muted-foreground">No payment history yet</p>
