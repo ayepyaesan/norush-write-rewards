@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Download, Copy, Upload, CheckCircle } from "lucide-react";
+import { ArrowLeft, Download, Copy, Upload, CheckCircle, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -17,6 +17,7 @@ const Payment = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const merchantPhone = "09250915925";
   const merchantName = "NoRush";
@@ -93,6 +94,33 @@ const Payment = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const refreshPaymentStatus = async () => {
+    setIsRefreshing(true);
+    try {
+      const { data: paymentData } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('task_id', taskId)
+        .single();
+
+      if (paymentData) {
+        setPayment(paymentData);
+        toast({
+          title: "Status Updated",
+          description: "Payment status has been refreshed.",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to refresh payment status.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -468,11 +496,11 @@ const Payment = () => {
                   <div>
                     <span className="text-muted-foreground">Status:</span>
                     <p className={`font-medium ${
-                      payment?.payment_status === 'approved' ? 'text-green-600' :
+                      payment?.payment_status === 'verified' || payment?.payment_status === 'approved' ? 'text-green-600' :
                       payment?.payment_status === 'rejected' ? 'text-red-600' :
                       'text-orange-600'
                     }`}>
-                      {payment?.payment_status === 'approved' ? 'Approved ✓' :
+                      {payment?.payment_status === 'verified' || payment?.payment_status === 'approved' ? 'Verified ✓' :
                        payment?.payment_status === 'rejected' ? 'Rejected ✗' :
                        'Pending Verification ⏳'}
                     </p>
@@ -539,12 +567,23 @@ const Payment = () => {
                     <p className="text-sm text-muted-foreground mb-4">
                       ⏳ Thank you! Your payment is being verified. You'll receive a notification once approved.
                     </p>
-                    <Button 
-                      onClick={() => navigate("/dashboard")} 
-                      className="gradient-warm hover-lift px-8"
-                    >
-                      Back to Dashboard
-                    </Button>
+                    <div className="flex gap-3 justify-center">
+                      <Button 
+                        onClick={refreshPaymentStatus}
+                        disabled={isRefreshing}
+                        variant="outline"
+                        className="flex items-center gap-2"
+                      >
+                        <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        {isRefreshing ? 'Refreshing...' : 'Refresh Status'}
+                      </Button>
+                      <Button 
+                        onClick={() => navigate("/dashboard")} 
+                        className="gradient-warm hover-lift px-8"
+                      >
+                        Back to Dashboard
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>

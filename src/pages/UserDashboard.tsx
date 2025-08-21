@@ -166,8 +166,7 @@ const UserDashboard = () => {
         .select(`
           *,
           payments (*),
-          daily_milestones (*),
-          task_files (*)
+          daily_milestones (*)
         `)
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
@@ -179,7 +178,20 @@ const UserDashboard = () => {
           variant: "destructive",
         });
       } else {
-        setTasks(tasksData || []);
+        // Fetch task_files separately to avoid query issues
+        const tasksWithFiles = await Promise.all((tasksData || []).map(async (task) => {
+          const { data: taskFiles } = await supabase
+            .from('task_files')
+            .select('*')
+            .eq('task_id', task.id);
+          
+          return {
+            ...task,
+            task_files: taskFiles || []
+          };
+        }));
+        
+        setTasks(tasksWithFiles);
       }
     } catch (error) {
       toast({
