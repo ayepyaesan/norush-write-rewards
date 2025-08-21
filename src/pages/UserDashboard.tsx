@@ -408,10 +408,6 @@ const UserDashboard = () => {
                       {/* Task Structure Overview */}
                       {isVerified ? (
                         <div className="bg-muted/30 rounded-lg p-4">
-                          <h4 className="font-medium text-foreground mb-3 flex items-center gap-2">
-                            <FileText className="w-4 h-4" />
-                            Task Structure
-                          </h4>
                           <div className="space-y-2">
                             <div className="flex items-center justify-between text-sm">
                               <span className="flex items-center gap-2">
