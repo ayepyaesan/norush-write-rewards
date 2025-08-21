@@ -1,308 +1,249 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Placeholder from '@tiptap/extension-placeholder';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { 
   Bold, 
   Italic, 
   Underline, 
-  Save, 
-  Download,
-  Type,
-  Heading1,
-  Heading2,
-  Heading3,
-  X
-} from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import html2pdf from 'html2pdf.js';
+  List, 
+  ListOrdered, 
+  Quote, 
+  Undo, 
+  Redo,
+  Save,
+  Type
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface RichTextEditorProps {
-  onClose?: () => void;
-  taskName?: string;
+  content: string;
+  onChange: (content: string) => void;
+  onSave: () => void;
+  isSaving?: boolean;
+  placeholder?: string;
+  wordCount?: number;
+  targetWords?: number;
+  title?: string;
 }
 
-export const RichTextEditor: React.FC<RichTextEditorProps> = ({ onClose, taskName = "Document" }) => {
-  const [wordCount, setWordCount] = useState(0);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const editorRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
+export const RichTextEditor = ({ 
+  content, 
+  onChange, 
+  onSave, 
+  isSaving = false, 
+  placeholder = "Start writing...",
+  wordCount = 0,
+  targetWords = 0,
+  title = "Writing Editor"
+}: RichTextEditorProps) => {
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        bulletList: {
+          keepMarks: true,
+          keepAttributes: false,
+        },
+        orderedList: {
+          keepMarks: true,
+          keepAttributes: false,
+        },
+      }),
+      Placeholder.configure({
+        placeholder,
+      }),
+    ],
+    content,
+    onUpdate: ({ editor }) => {
+      onChange(editor.getHTML());
+    },
+    editorProps: {
+      attributes: {
+        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none min-h-[400px] p-4',
+      },
+    },
+  });
 
-  const storageKey = `rich-text-editor-${taskName}`;
+  const toggleBold = () => editor?.chain().focus().toggleBold().run();
+  const toggleItalic = () => editor?.chain().focus().toggleItalic().run();
+  const toggleStrike = () => editor?.chain().focus().toggleStrike().run();
+  const toggleBulletList = () => editor?.chain().focus().toggleBulletList().run();
+  const toggleOrderedList = () => editor?.chain().focus().toggleOrderedList().run();
+  const toggleBlockquote = () => editor?.chain().focus().toggleBlockquote().run();
+  const undo = () => editor?.chain().focus().undo().run();
+  const redo = () => editor?.chain().focus().redo().run();
 
-  useEffect(() => {
-    // Load saved content from localStorage
-    const savedContent = localStorage.getItem(storageKey);
-    if (savedContent && editorRef.current) {
-      editorRef.current.innerHTML = savedContent;
-      updateWordCount();
-    }
-  }, [storageKey]);
-
-  const updateWordCount = useCallback(() => {
-    if (editorRef.current) {
-      const text = editorRef.current.innerText || '';
-      const words = text.trim().split(/\s+/).filter(word => word.length > 0);
-      setWordCount(words.length);
-    }
-  }, []);
-
-  const handleInput = useCallback(() => {
-    updateWordCount();
-  }, [updateWordCount]);
-
-  const handlePaste = useCallback((e: React.ClipboardEvent) => {
-    e.preventDefault();
-    toast({
-      title: "Paste Disabled",
-      description: "You must type directly. Copy functionality is still available.",
-      variant: "destructive",
-    });
-  }, [toast]);
-
-  const execCommand = useCallback((command: string, value?: string) => {
-    document.execCommand(command, false, value);
-    editorRef.current?.focus();
-  }, []);
-
-  const applyHeading = useCallback((level: string) => {
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) return;
-
-    const range = selection.getRangeAt(0);
-    const selectedText = range.toString();
-    
-    if (selectedText) {
-      const headingElement = document.createElement(level);
-      headingElement.textContent = selectedText;
-      range.deleteContents();
-      range.insertNode(headingElement);
-      
-      // Clear selection and place cursor after heading
-      selection.removeAllRanges();
-      const newRange = document.createRange();
-      newRange.setStartAfter(headingElement);
-      newRange.collapse(true);
-      selection.addRange(newRange);
-    }
-    
-    editorRef.current?.focus();
-  }, []);
-
-  const saveToLocalStorage = useCallback(() => {
-    if (editorRef.current) {
-      const content = editorRef.current.innerHTML;
-      localStorage.setItem(storageKey, content);
-      setLastSaved(new Date());
-      toast({
-        title: "Document Saved",
-        description: "Your work has been saved to local storage.",
-      });
-    }
-  }, [storageKey, toast]);
-
-  const exportToPDF = useCallback(async () => {
-    if (!editorRef.current) return;
-
-    const element = editorRef.current.cloneNode(true) as HTMLElement;
-    
-    // Create a temporary container with proper styling for PDF
-    const pdfContainer = document.createElement('div');
-    pdfContainer.style.cssText = `
-      padding: 40px;
-      font-family: 'Times New Roman', serif;
-      font-size: 12pt;
-      line-height: 1.6;
-      color: black;
-      background: white;
-      max-width: 210mm;
-      margin: 0 auto;
-    `;
-    
-    // Apply styles to headings
-    const headings = element.querySelectorAll('h1, h2, h3');
-    headings.forEach((heading) => {
-      const tag = heading.tagName.toLowerCase();
-      if (tag === 'h1') {
-        (heading as HTMLElement).style.cssText = 'font-size: 18pt; font-weight: bold; margin: 20px 0 10px 0;';
-      } else if (tag === 'h2') {
-        (heading as HTMLElement).style.cssText = 'font-size: 16pt; font-weight: bold; margin: 16px 0 8px 0;';
-      } else if (tag === 'h3') {
-        (heading as HTMLElement).style.cssText = 'font-size: 14pt; font-weight: bold; margin: 12px 0 6px 0;';
-      }
-    });
-
-    pdfContainer.appendChild(element);
-
-    const opt = {
-      margin: [0.5, 0.5],
-      filename: `${taskName}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-    };
-
-    try {
-      await html2pdf().set(opt).from(pdfContainer).save();
-      toast({
-        title: "PDF Exported",
-        description: `${taskName}.pdf has been downloaded.`,
-      });
-    } catch (error) {
-      toast({
-        title: "Export Failed",
-        description: "There was an error exporting your document to PDF.",
-        variant: "destructive",
-      });
-    }
-  }, [taskName, toast]);
+  if (!editor) {
+    return null;
+  }
 
   return (
-    <div className="fixed inset-0 bg-background z-50 flex flex-col">
-      {/* Toolbar */}
-      <div className="border-b bg-background/95 backdrop-blur-sm">
-        <div className="flex items-center justify-between px-4 py-2">
-          <div className="flex items-center space-x-1">
-            {/* Formatting Tools */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => execCommand('bold')}
-              className="h-8 w-8 p-0"
-              title="Bold (Ctrl+B)"
+    <Card className="gradient-card border-0 shadow-warm">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Type className="w-5 h-5" />
+            {title}
+          </CardTitle>
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-muted-foreground">
+              <span className="font-medium">{wordCount}</span>
+              {targetWords > 0 && <span> / {targetWords}</span>} words
+            </div>
+            <Button 
+              onClick={onSave}
+              disabled={isSaving}
+              className="gradient-warm hover-lift"
             >
-              <Bold className="h-4 w-4" />
-            </Button>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => execCommand('italic')}
-              className="h-8 w-8 p-0"
-              title="Italic (Ctrl+I)"
-            >
-              <Italic className="h-4 w-4" />
-            </Button>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => execCommand('underline')}
-              className="h-8 w-8 p-0"
-              title="Underline (Ctrl+U)"
-            >
-              <Underline className="h-4 w-4" />
-            </Button>
-
-            <Separator orientation="vertical" className="h-6 mx-2" />
-
-            {/* Heading Tools */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => applyHeading('h1')}
-              className="h-8 w-8 p-0"
-              title="Heading 1"
-            >
-              <Heading1 className="h-4 w-4" />
-            </Button>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => applyHeading('h2')}
-              className="h-8 w-8 p-0"
-              title="Heading 2"
-            >
-              <Heading2 className="h-4 w-4" />
-            </Button>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => applyHeading('h3')}
-              className="h-8 w-8 p-0"
-              title="Heading 3"
-            >
-              <Heading3 className="h-4 w-4" />
+              <Save className="w-4 h-4 mr-2" />
+              {isSaving ? 'Saving...' : 'Save'}
             </Button>
           </div>
-
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={saveToLocalStorage}
-              className="flex items-center space-x-2"
-            >
-              <Save className="h-4 w-4" />
-              <span>Save</span>
-            </Button>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={exportToPDF}
-              className="flex items-center space-x-2"
-            >
-              <Download className="h-4 w-4" />
-              <span>Export PDF</span>
-            </Button>
-
-            {onClose && (
+        </div>
+      </CardHeader>
+      
+      <CardContent className="p-0">
+        {/* Toolbar */}
+        <div className="border-b bg-muted/30 p-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Formatting buttons */}
+            <div className="flex items-center gap-1">
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={onClose}
+                onClick={toggleBold}
+                className={cn(
+                  "h-8 w-8 p-0",
+                  editor.isActive('bold') && "bg-primary text-primary-foreground"
+                )}
+              >
+                <Bold className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleItalic}
+                className={cn(
+                  "h-8 w-8 p-0",
+                  editor.isActive('italic') && "bg-primary text-primary-foreground"
+                )}
+              >
+                <Italic className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleStrike}
+                className={cn(
+                  "h-8 w-8 p-0",
+                  editor.isActive('strike') && "bg-primary text-primary-foreground"
+                )}
+              >
+                <Underline className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <Separator orientation="vertical" className="h-6" />
+
+            {/* List buttons */}
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleBulletList}
+                className={cn(
+                  "h-8 w-8 p-0",
+                  editor.isActive('bulletList') && "bg-primary text-primary-foreground"
+                )}
+              >
+                <List className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleOrderedList}
+                className={cn(
+                  "h-8 w-8 p-0",
+                  editor.isActive('orderedList') && "bg-primary text-primary-foreground"
+                )}
+              >
+                <ListOrdered className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleBlockquote}
+                className={cn(
+                  "h-8 w-8 p-0",
+                  editor.isActive('blockquote') && "bg-primary text-primary-foreground"
+                )}
+              >
+                <Quote className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <Separator orientation="vertical" className="h-6" />
+
+            {/* Undo/Redo buttons */}
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={undo}
+                disabled={!editor.can().undo()}
                 className="h-8 w-8 p-0"
               >
-                <X className="h-4 w-4" />
+                <Undo className="w-4 h-4" />
               </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={redo}
+                disabled={!editor.can().redo()}
+                className="h-8 w-8 p-0"
+              >
+                <Redo className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Editor Content */}
+        <div className="min-h-[500px] bg-background">
+          <EditorContent 
+            editor={editor} 
+            className="h-full [&_.ProseMirror]:min-h-[500px] [&_.ProseMirror]:p-6 [&_.ProseMirror]:focus:outline-none [&_.ProseMirror]:text-base [&_.ProseMirror]:leading-relaxed"
+          />
+        </div>
+
+        {/* Footer with word count and target */}
+        <div className="border-t bg-muted/20 p-3">
+          <div className="flex justify-between items-center text-sm">
+            <div className="text-muted-foreground">
+              Words written: <span className="font-medium text-foreground">{wordCount}</span>
+              {targetWords > 0 && (
+                <>
+                  {' • '}Target: <span className="font-medium text-foreground">{targetWords}</span>
+                  {' • '}Remaining: <span className="font-medium text-foreground">{Math.max(0, targetWords - wordCount)}</span>
+                </>
+              )}
+            </div>
+            {targetWords > 0 && (
+              <div className="flex items-center gap-2">
+                {wordCount >= targetWords ? (
+                  <span className="text-green-600 font-medium">✓ Target achieved!</span>
+                ) : (
+                  <span className="text-muted-foreground">
+                    {Math.round((wordCount / targetWords) * 100)}% complete
+                  </span>
+                )}
+              </div>
             )}
           </div>
         </div>
-      </div>
-
-      {/* Editor */}
-      <div className="flex-1 overflow-auto bg-background">
-        <div className="max-w-4xl mx-auto p-8">
-          <div
-            ref={editorRef}
-            contentEditable
-            suppressContentEditableWarning
-            onInput={handleInput}
-            onPaste={handlePaste}
-            className="min-h-[calc(100vh-200px)] bg-background border-0 outline-none prose prose-lg max-w-none focus:outline-none"
-            style={{
-              fontFamily: 'Times New Roman, serif',
-              fontSize: '12pt',
-              lineHeight: '1.6',
-              padding: '40px',
-              backgroundColor: 'white',
-              boxShadow: '0 0 10px rgba(0,0,0,0.1)',
-              borderRadius: '4px',
-            }}
-            data-placeholder="Start typing your document..."
-          />
-        </div>
-      </div>
-
-      {/* Status Bar */}
-      <div className="border-t bg-muted/30 px-4 py-2 flex items-center justify-between text-sm text-muted-foreground">
-        <div className="flex items-center space-x-4">
-          <span className="flex items-center space-x-1">
-            <Type className="h-4 w-4" />
-            <span>{wordCount} words</span>
-          </span>
-          {lastSaved && (
-            <span>
-              Last saved: {lastSaved.toLocaleTimeString()}
-            </span>
-          )}
-        </div>
-        <div className="text-xs">
-          Press Ctrl+B/I/U for formatting • Paste is disabled
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };

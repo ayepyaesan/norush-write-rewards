@@ -389,7 +389,7 @@ const UserDashboard = () => {
                           </Badge>
                           {isVerified && (
                             <Button 
-                              onClick={() => navigate(`/task-editor/${task.id}`)}
+                              onClick={() => navigate(`/daily-text-editor/${task.id}`)}
                               className="gradient-warm hover-lift"
                             >
                               <PlayCircle className="w-4 h-4 mr-2" />

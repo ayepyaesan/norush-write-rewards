@@ -104,19 +104,18 @@ const TaskCreation = () => {
             console.error('Milestones generation error:', milestonesError);
           }
 
-          // Create deposit record
-          const { error: depositError } = await supabase
-            .from('deposits')
+          // Create payment record instead of deposit
+          const { error: paymentError } = await supabase
+            .from('payments')
             .insert({
               task_id: task.id,
               user_id: user.id,
               amount: depositAmount,
-              payment_method: 'kpay',
               payment_status: 'pending'
             });
 
-          if (depositError) {
-            console.error('Deposit creation error:', depositError);
+          if (paymentError) {
+            console.error('Payment creation error:', paymentError);
           }
         } catch (err) {
           console.error('Setup failed:', err);

@@ -15,7 +15,7 @@ import CombinedDashboard from "./pages/CombinedDashboard";
 import UserDashboard from "./pages/UserDashboard";
 import TaskEditor from "./pages/TaskEditor";
 import AdminDashboard from "./pages/AdminDashboard";
-import RichTextEditorPage from "./pages/RichTextEditorPage";
+import DailyTextEditor from "./pages/DailyTextEditor";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -82,9 +82,9 @@ const App = () => (
               <AdminDashboard />
             </ProtectedRoute>
           } />
-          <Route path="/editor/:taskId?" element={
+          <Route path="/daily-text-editor/:taskId" element={
             <ProtectedRoute requiredRole="user">
-              <RichTextEditorPage />
+              <DailyTextEditor />
             </ProtectedRoute>
           } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
