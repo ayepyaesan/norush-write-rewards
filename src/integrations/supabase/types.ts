@@ -627,6 +627,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_get_signup_requests: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          kpay_name: string
+          kpay_phone: string
+          role: string
+        }[]
+      }
+      admin_process_signup_request: {
+        Args: { p_approve: boolean; p_request_id: string }
+        Returns: boolean
+      }
       calculate_next_day_target: {
         Args: {
           p_current_day: number
@@ -634,6 +650,10 @@ export type Database = {
           p_task_id: string
           p_words_written: number
         }
+        Returns: number
+      }
+      cleanup_old_signup_requests: {
+        Args: Record<PropertyKey, never>
         Returns: number
       }
       complete_refund: {
