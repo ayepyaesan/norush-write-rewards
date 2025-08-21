@@ -49,11 +49,7 @@ const BenefitsSection = () => {
                     {/* Icon with background */}
                     <div className="mb-6">
                       <div className="w-20 h-20 mx-auto rounded-2xl bg-primary flex items-center justify-center mb-4 shadow-warm group-hover:scale-110 transition-transform duration-300">
-                        <img 
-                          src="/lovable-uploads/0797af2d-38f3-4b04-bc02-202da840a270.png" 
-                          alt="Brain with waves" 
-                          className="w-10 h-10 object-contain"
-                        />
+                        <Icon className="w-10 h-10 text-primary-foreground" />
                       </div>
                     </div>
                     
