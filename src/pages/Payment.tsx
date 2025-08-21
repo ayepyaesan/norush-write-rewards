@@ -203,9 +203,25 @@ const Payment = () => {
   };
 
   const handleNextStep = () => {
-    if (currentStep < 4) {
-      setCurrentStep(currentStep + 1);
-    } else {
+    // Validate required fields for each step
+    if (currentStep === 1) {
+      // Step 1 has no required fields to validate, continue
+      setCurrentStep(2);
+    } else if (currentStep === 2) {
+      // Step 2 has no required fields to validate, continue
+      setCurrentStep(3);
+    } else if (currentStep === 3) {
+      // Step 3 requires screenshot upload
+      if (!payment?.screenshot_url) {
+        toast({
+          title: "Screenshot Required",
+          description: "Please upload your payment screenshot before proceeding.",
+          variant: "destructive",
+        });
+        return;
+      }
+      setCurrentStep(4);
+    } else if (currentStep === 4) {
       navigate("/dashboard");
     }
   };
