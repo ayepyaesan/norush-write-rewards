@@ -84,6 +84,43 @@ const UserDashboard = () => {
     checkUser();
   }, []);
 
+  // Set up real-time subscription for payment updates
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel('payment-status-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'deposits',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Payment update received:', payload);
+          
+          // If payment status changed to verified, show toast and refresh tasks
+          if (payload.new.payment_status === 'verified' && payload.old.payment_status !== 'verified') {
+            toast({
+              title: "Payment Approved! 🎉",
+              description: "Your payment has been verified. You can now start writing!",
+              duration: 5000,
+            });
+            
+            // Refresh tasks to update UI
+            fetchTasks(user.id);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, toast]);
+
   const checkUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     
@@ -159,21 +196,19 @@ const UserDashboard = () => {
   };
 
   const getTaskStatusColor = (task: Task) => {
-    switch (task.status) {
-      case 'completed': return "text-green-600";
-      case 'in_progress': return "text-blue-600";
-      case 'pending': return "text-yellow-600";
-      default: return "text-gray-600";
-    }
+    const deposit = task.deposits?.[0];
+    if (!deposit) return "text-yellow-600";
+    if (deposit.payment_status === 'verified') return "text-green-600";
+    if (deposit.screenshot_url && deposit.payment_status === 'pending') return "text-orange-600";
+    return "text-red-600";
   };
 
   const getTaskStatusText = (task: Task) => {
-    switch (task.status) {
-      case 'completed': return "Completed";
-      case 'in_progress': return "In Progress";
-      case 'pending': return "Pending Payment";
-      default: return "Unknown";
-    }
+    const deposit = task.deposits?.[0];
+    if (!deposit) return "Payment Required";
+    if (deposit.payment_status === 'verified') return "Active";
+    if (deposit.screenshot_url && deposit.payment_status === 'pending') return "Verification Pending";
+    return "Payment Required";
   };
 
   const getTodayProgress = (taskWithMilestones: any) => {
