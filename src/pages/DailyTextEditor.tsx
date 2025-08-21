@@ -185,7 +185,24 @@ const DailyTextEditor = () => {
   };
 
   const saveContent = async () => {
-    if (!user || !task || activeDay < 1) return;
+    console.log('Save button clicked - debugging info:', {
+      user: user?.id,
+      task: task?.id,
+      taskId,
+      activeDay,
+      currentContent: currentContent.substring(0, 100) + '...',
+      contentLength: currentContent.length
+    });
+    
+    if (!user || !task || activeDay < 1) {
+      console.log('Save failed - missing required data:', { user: !!user, task: !!task, activeDay });
+      toast({
+        title: "Error",
+        description: "Missing required data for saving. Please try refreshing the page.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsSaving(true);
     try {
@@ -193,7 +210,14 @@ const DailyTextEditor = () => {
       const textContent = currentContent.replace(/<[^>]*>/g, '');
       const wordCount = textContent.trim().split(/\s+/).filter(word => word.length > 0).length;
 
-      const { error } = await supabase
+      console.log('Attempting to save to Supabase:', {
+        task_id: taskId,
+        user_id: user.id,
+        day_number: activeDay,
+        word_count: wordCount
+      });
+
+      const { data, error } = await supabase
         .from('task_files')
         .upsert({
           task_id: taskId,
@@ -202,15 +226,20 @@ const DailyTextEditor = () => {
           title: `Day ${activeDay}`,
           content: currentContent,
           word_count: wordCount
-        });
+        })
+        .select();
+
+      console.log('Supabase response:', { data, error });
 
       if (error) {
+        console.error('Supabase error details:', error);
         toast({
           title: "Error",
-          description: "Failed to save your writing.",
+          description: `Failed to save your writing: ${error.message}`,
           variant: "destructive",
         });
       } else {
+        console.log('Save successful:', data);
         toast({
           title: "Saved!",
           description: `Day ${activeDay} content saved successfully.`,
@@ -224,9 +253,10 @@ const DailyTextEditor = () => {
         ));
       }
     } catch (error) {
+      console.error('Unexpected error during save:', error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred.",
+        description: `An unexpected error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive",
       });
     } finally {
