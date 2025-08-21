@@ -10,11 +10,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
-import { Shield, Users, FileText, CreditCard, LogOut, Settings, Bell, Search, CheckCircle, XCircle, Eye, RefreshCw, DollarSign, Calendar, Clock, AlertTriangle, Plus, Upload, Download, Filter, TrendingUp, BarChart3, PieChart, Activity, UserCheck, UserX, Star, Moon, Sun, ChevronDown, ArrowUpRight, ArrowDownLeft, Target, Briefcase, Wallet, Building, Mail, Phone } from "lucide-react";
+import { Shield, Users, FileText, CreditCard, LogOut, Settings, Bell, Search, CheckCircle, XCircle, Eye, RefreshCw, DollarSign, Calendar, Clock, AlertTriangle, Plus, Upload, Download, Filter, TrendingUp, BarChart3, PieChart, Activity, UserCheck, UserX, Star, Moon, Sun, ChevronDown, ArrowUpRight, ArrowDownLeft, Target, Briefcase, Wallet, Building, Mail, Phone, Banknote } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import RefundRequestTracker from "@/components/RefundRequestTracker";
+import RefundMenu from "@/components/RefundMenu";
 // Charts removed to avoid TypeScript conflicts - using visual indicators instead
 
 interface UserProfile {
@@ -843,6 +844,10 @@ const AdminDashboard = () => {
             icon: CreditCard,
             label: "Payments"
           }, {
+            id: "refunds",
+            icon: Banknote,
+            label: "Refunds"
+          }, {
             id: "reports",
             icon: TrendingUp,
             label: "Reports"
@@ -1499,6 +1504,9 @@ const AdminDashboard = () => {
                 </Card>)}
             </div>
           </div>}
+
+        {/* Refunds Tab */}
+        {activeTab === "refunds" && <RefundMenu />}
 
         {/* Enhanced Reports Tab */}
         {activeTab === "reports" && <div className="space-y-6">
